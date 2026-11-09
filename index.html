@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Student Management System dashboard for managing students, courses and attendance.">
+  <title>Student Management System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="#"><span class="brand-mark">S</span><span>Campus<span class="brand-light">Desk</span></span></a>
+      <div class="side-label">WORKSPACE</div>
+      <nav class="nav-list">
+        <button class="nav-link active" data-page="dashboard"><span>▦</span> Dashboard</button>
+        <button class="nav-link" data-page="students"><span>♙</span> Students</button>
+        <button class="nav-link" data-page="courses"><span>▤</span> Courses</button>
+        <button class="nav-link" data-page="attendance"><span>✓</span> Attendance</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="help-card"><div class="help-icon">✦</div><strong>Stay organized</strong><p>Manage your campus records in one place.</p></div>
+        <div class="profile"><div class="avatar">AD</div><div><strong>Administrator</strong><small>Demo account</small></div><button id="logoutBtn" title="Sign out">↗</button></div>
+      </div>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar">
+        <button class="mobile-menu" id="menuBtn" aria-label="Open menu">☰</button>
+        <div class="breadcrumb">Workspace <span>/</span> <strong id="pageCrumb">Dashboard</strong></div>
+        <div class="top-actions"><span class="status-dot"></span><span id="connectionLabel">Demo mode</span><div class="top-avatar">AD</div></div>
+      </header>
+
+      <section class="page-content">
+        <section class="page-view active" id="dashboardPage">
+          <div class="welcome-row"><div><div class="eyebrow">OVERVIEW</div><h1>Good morning, Admin <span>✦</span></h1><p class="muted">Here’s what’s happening with your campus today.</p></div><div class="date-chip" id="todayDate"></div></div>
+          <div class="stats-grid">
+            <article class="stat-card"><div class="stat-top"><span>Total students</span><span class="stat-icon purple">♙</span></div><strong id="statStudents">0</strong><small><span class="trend">●</span> Registered students</small></article>
+            <article class="stat-card"><div class="stat-top"><span>Active courses</span><span class="stat-icon blue">▤</span></div><strong id="statCourses">0</strong><small>Available courses</small></article>
+            <article class="stat-card"><div class="stat-top"><span>Present today</span><span class="stat-icon green">✓</span></div><strong id="statPresent">0</strong><small>Attendance marked present</small></article>
+            <article class="stat-card"><div class="stat-top"><span>Attendance rate</span><span class="stat-icon orange">◷</span></div><strong id="statRate">0%</strong><small>Based on today's records</small></article>
+          </div>
+          <div class="content-grid">
+            <article class="panel"><div class="panel-heading"><div><h2>Recent students</h2><p>Latest student registrations</p></div><button class="text-button" data-go="students">View all →</button></div><div class="table-wrap"><table><thead><tr><th>STUDENT</th><th>STUDENT ID</th><th>COURSE</th><th>STATUS</th></tr></thead><tbody id="recentStudents"></tbody></table></div></article>
+            <article class="panel quick-panel"><div class="panel-heading"><div><h2>Quick actions</h2><p>Common tasks</p></div></div><button class="quick-action" data-action="add-student"><span class="quick-icon purple">＋</span><span><b>Add a student</b><small>Register a new student</small></span><i>→</i></button><button class="quick-action" data-go="attendance"><span class="quick-icon green">✓</span><span><b>Mark attendance</b><small>Record today's attendance</small></span><i>→</i></button><button class="quick-action" data-go="courses"><span class="quick-icon blue">▤</span><span><b>Manage courses</b><small>View course list</small></span><i>→</i></button></article>
+          </div>
+        </section>
+
+        <section class="page-view" id="studentsPage">
+          <div class="page-heading"><div><div class="eyebrow">RECORDS</div><h1>Students</h1><p class="muted">Add, search and manage student information.</p></div><button class="primary-btn" data-action="add-student">＋ Add student</button></div>
+          <div class="panel"><div class="toolbar"><div class="search-box"><span>⌕</span><input id="studentSearch" placeholder="Search by name, ID or email..."></div><span class="result-count" id="studentCount">0 students</span></div><div class="table-wrap"><table><thead><tr><th>STUDENT</th><th>STUDENT ID</th><th>EMAIL</th><th>COURSE</th><th>STATUS</th><th>ACTIONS</th></tr></thead><tbody id="studentsTable"></tbody></table></div></div>
+        </section>
+
+        <section class="page-view" id="coursesPage">
+          <div class="page-heading"><div><div class="eyebrow">ACADEMICS</div><h1>Courses</h1><p class="muted">The courses available in your institution.</p></div><button class="primary-btn" data-action="add-course">＋ Add course</button></div>
+          <div class="course-grid" id="courseGrid"></div>
+        </section>
+
+        <section class="page-view" id="attendancePage">
+          <div class="page-heading"><div><div class="eyebrow">DAILY RECORDS</div><h1>Attendance</h1><p class="muted">Mark and review student attendance.</p></div><div class="date-field"><label for="attendanceDate">Attendance date</label><input type="date" id="attendanceDate"></div></div>
+          <div class="panel"><div class="toolbar"><div><h2 class="toolbar-title">Student attendance</h2><p class="muted small">Choose a status for each student, then save.</p></div><button class="primary-btn" id="saveAttendance">Save attendance</button></div><div class="table-wrap"><table><thead><tr><th>STUDENT</th><th>STUDENT ID</th><th>COURSE</th><th>ATTENDANCE</th></tr></thead><tbody id="attendanceTable"></tbody></table></div></div>
+        </section>
+      </section>
+      <footer>© <span id="year"></span> CampusDesk <span>·</span> Student Management System</footer>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="modalBackdrop">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal-head"><div><div class="eyebrow">STUDENT RECORD</div><h2 id="modalTitle">Add student</h2></div><button class="icon-btn" id="closeModal" aria-label="Close">×</button></div>
+      <form id="studentForm"><input type="hidden" id="editStudentId"><div class="form-grid">
+        <label>Full name<input id="studentName" required placeholder="e.g. Ayesha Khan"></label>
+        <label>Student ID<input id="studentId" required placeholder="e.g. STU-1001"></label>
+        <label>Email address<input id="studentEmail" type="email" required placeholder="student@example.com"></label>
+        <label>Phone number<input id="studentPhone" placeholder="03XX-XXXXXXX"></label>
+        <label class="full-field">Course<select id="studentCourse" required></select></label>
+      </div><div class="modal-actions"><button type="button" class="secondary-btn" id="cancelModal">Cancel</button><button type="submit" class="primary-btn">Save student</button></div></form>
+    </section>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+</body>
+</html>
