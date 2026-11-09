@@ -63,12 +63,12 @@ using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()))
 drop policy if exists "Authenticated users manage students" on public.students;
 drop policy if exists "Users manage own students" on public.students;
 create policy "Users manage own students" on public.students for all to authenticated
-using (user_id = auth.uid()) with check (user_id = auth.uid());
+using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()));
 
 drop policy if exists "Authenticated users manage attendance" on public.attendance;
 drop policy if exists "Users manage own attendance" on public.attendance;
 create policy "Users manage own attendance" on public.attendance for all to authenticated
-using (user_id = auth.uid()) with check (user_id = auth.uid());
+using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()));
 
 create index if not exists students_user_id_idx on public.students(user_id);
 create index if not exists attendance_user_date_idx on public.attendance(user_id, attendance_date);
