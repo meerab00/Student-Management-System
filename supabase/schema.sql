@@ -40,6 +40,15 @@ alter table public.courses add column if not exists user_id uuid default auth.ui
 alter table public.students add column if not exists user_id uuid default auth.uid() references auth.users(id) on delete cascade;
 alter table public.attendance add column if not exists user_id uuid default auth.uid() references auth.users(id) on delete cascade;
 
+-- Remove older global uniqueness rules so separate administrator accounts can use
+-- the same course names, course codes, and student numbers safely.
+alter table public.courses drop constraint if exists courses_name_key;
+alter table public.courses drop constraint if exists courses_code_key;
+alter table public.students drop constraint if exists students_student_number_key;
+create unique index if not exists courses_user_name_unique on public.courses(user_id, name);
+create unique index if not exists courses_user_code_unique on public.courses(user_id, code);
+create unique index if not exists students_user_number_unique on public.students(user_id, student_number);
+
 alter table public.courses enable row level security;
 alter table public.students enable row level security;
 alter table public.attendance enable row level security;
