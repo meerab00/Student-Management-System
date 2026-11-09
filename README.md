@@ -1,46 +1,39 @@
 # Student Management System — CampusDesk
 
-A responsive Student Management System starter project built with HTML, CSS and JavaScript. Supabase is provided as the online database and authentication backend.
+CampusDesk is a responsive, browser-based Student Management System. It uses Supabase for secure sign-in and online PostgreSQL storage, so records are shared across devices.
 
-## Features in the current demo
+## Features
 
+- Administrator sign-up, sign-in and sign-out
 - Dashboard with student, course and attendance summaries
-- Add, edit, delete and search student records
-- Course listing and add-course flow
-- Daily attendance marking (Present, Absent, Late)
-- Responsive desktop and mobile layout
-- Sample records stored in the current browser
+- Add, edit, search and delete student records
+- Add and view courses
+- Mark attendance as Present, Absent or Late
+- Supabase Row Level Security: each signed-in account can access only its own records
+- Responsive layout for desktop and mobile browsers
 
-## Run the demo
+## Technology
 
-Open `index.html` in a modern browser, or publish the repository using GitHub Pages. Demo records are stored only in that browser's local storage.
+- Frontend: HTML, CSS and JavaScript
+- Authentication and database: Supabase Auth and PostgreSQL
+- Repository and version control: GitHub
+- Static hosting: GitHub Pages
 
-**Important:** Demo mode is not a secure admin login, and data is not shared between devices. Do not enter real student personal information in demo mode.
+## Database setup
 
-## Connect Supabase for shared online data
+The Supabase project is configured for this app. The schema is maintained in `supabase/schema.sql`. It creates the `courses`, `students` and `attendance` tables, enables Row Level Security, and applies per-user access policies.
 
-1. Create a Supabase project at https://supabase.com/.
-2. Open the SQL Editor and run `supabase/schema.sql`.
-3. Copy the Project URL and anon/public key from Project Settings → API.
-4. Set `SUPABASE_URL` and `SUPABASE_ANON_KEY` in `app.js`.
-5. Configure Supabase Authentication and create an administrator account.
-6. Connect the app's data operations to Supabase before using it with real student records.
+To apply the schema to another Supabase project, open its SQL Editor and run the complete `supabase/schema.sql` script. Configure the matching project URL and publishable key in `app.js`.
 
-Never put a Supabase service-role key in browser code. The anon key is safe to expose only when Row Level Security is correctly configured.
+**Security:** The frontend uses only a Supabase publishable key. Never put a Supabase secret or service-role key in browser code.
+
+## Run locally
+
+Open `index.html` in a modern browser, or serve the repository with any static web server. Create an administrator account from the sign-in screen. If email confirmation is enabled in Supabase Auth, confirm the email before signing in.
 
 ## Publish with GitHub Pages
 
-1. Open repository Settings → Pages.
-2. Under Build and deployment, select **Deploy from a branch**.
-3. Select branch **main** and folder **/(root)**, then Save.
-4. Wait for GitHub Pages to publish. GitHub will show the website URL on that settings screen.
-
-## Technology stack
-
-- Frontend: HTML5, CSS3, JavaScript
-- Database and authentication: Supabase (PostgreSQL + Auth)
-- Version control: GitHub
-- Hosting: GitHub Pages (static frontend)
+The repository has GitHub Pages enabled. In the repository's **Settings → Pages**, confirm that the deployment source is the `main` branch and the `/(root)` folder. GitHub displays the published website URL on that page.
 
 ## Project structure
 
