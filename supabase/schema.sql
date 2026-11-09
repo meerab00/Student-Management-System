@@ -1,5 +1,5 @@
 -- CampusDesk Student Management System — Supabase setup
--- Run the complete script in Supabase Dashboard > SQL Editor > New query.
+-- Safe to re-run. Creates the tables and applies per-account access rules.
 -- Each signed-in account can access only its own records.
 
 create table if not exists public.courses (
@@ -45,9 +45,11 @@ alter table public.attendance add column if not exists user_id uuid default auth
 alter table public.courses drop constraint if exists courses_name_key;
 alter table public.courses drop constraint if exists courses_code_key;
 alter table public.students drop constraint if exists students_student_number_key;
-create unique index if not exists courses_user_name_unique on public.courses(user_id, name);
-create unique index if not exists courses_user_code_unique on public.courses(user_id, code);
-create unique index if not exists students_user_number_unique on public.students(user_id, student_number);
+-- Remove duplicate indexes left by earlier versions; table constraints already enforce these rules.
+drop index if exists public.courses_user_name_unique;
+drop index if exists public.courses_user_code_unique;
+drop index if exists public.students_user_number_unique;
+create index if not exists students_course_id_idx on public.students(course_id);
 
 alter table public.courses enable row level security;
 alter table public.students enable row level security;
@@ -56,7 +58,7 @@ alter table public.attendance enable row level security;
 drop policy if exists "Authenticated users manage courses" on public.courses;
 drop policy if exists "Users manage own courses" on public.courses;
 create policy "Users manage own courses" on public.courses for all to authenticated
-using (user_id = auth.uid()) with check (user_id = auth.uid());
+using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()));
 
 drop policy if exists "Authenticated users manage students" on public.students;
 drop policy if exists "Users manage own students" on public.students;
@@ -70,3 +72,8 @@ using (user_id = auth.uid()) with check (user_id = auth.uid());
 
 create index if not exists students_user_id_idx on public.students(user_id);
 create index if not exists attendance_user_date_idx on public.attendance(user_id, attendance_date);
+
+
+-- The browser app uses the authenticated role only. Keep unauthenticated access closed.
+revoke all on table public.courses, public.students, public.attendance from anon;
+grant select, insert, update, delete on table public.courses, public.students, public.attendance to authenticated;
