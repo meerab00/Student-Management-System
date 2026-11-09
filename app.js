@@ -5,18 +5,18 @@ const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let currentUser = null;
 let students = [], courses = [], attendance = {};
 const $ = id => document.getElementById(id);
-const today = () => new Date().toISOString().slice(0,10);
+const today = () => { const d=new Date(); const local=new Date(d.getTime()-d.getTimezoneOffset()*60000); return local.toISOString().slice(0,10); };
 function escapeHTML(value){return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function toast(message){const el=$("toast");el.textContent=message;el.classList.add("show");setTimeout(()=>el.classList.remove("show"),2600)}
 function initials(name){return String(name||"?").split(/\s+/).slice(0,2).map(x=>x[0]).join("").toUpperCase()}
 function courseName(id){return courses.find(c=>c.id===id)?.name||"Not assigned"}
 function showAuth(message=""){ $("authScreen").hidden=false;$("appShell").hidden=true;if(message) $("authMessage").textContent=message; }
-function showApp(){ $("authScreen").hidden=true;$("appShell").hidden=false;$("connectionLabel").textContent="Supabase connected"; }
+function showApp(){ $("authScreen").hidden=true;$("appShell").hidden=false;$("connectionLabel").textContent="Supabase connected";$("profileEmail").textContent=currentUser?.email||"Administrator"; }
 async function loadData(){
  const [c,s,a]=await Promise.all([
-  db.from("courses").select("*").order("name"),
-  db.from("students").select("*").order("created_at",{ascending:false}),
-  db.from("attendance").select("*").order("attendance_date",{ascending:false})
+  db.from("courses").select("*").eq("user_id",currentUser.id).order("name"),
+  db.from("students").select("*").eq("user_id",currentUser.id).order("created_at",{ascending:false}),
+  db.from("attendance").select("*").eq("user_id",currentUser.id).order("attendance_date",{ascending:false})
  ]);
  for(const r of [c,s,a]) if(r.error) throw r.error;
  courses=c.data||[]; students=(s.data||[]).map(x=>({...x,id:x.id,studentNumber:x.student_number,name:x.full_name,email:x.email,phone:x.phone,courseId:x.course_id,active:x.is_active}));
@@ -29,7 +29,7 @@ async function loadData(){
    {name:"Business Studies",code:"BUS-101",description:"Business, management and entrepreneurship",duration:"4 years"}
   ];
   const result=await db.from("courses").insert(defaults);if(result.error)throw result.error;
-  const refreshed=await db.from("courses").select("*").order("name");if(refreshed.error)throw refreshed.error;courses=refreshed.data||[];
+  const refreshed=await db.from("courses").select("*").eq("user_id",currentUser.id).order("name");if(refreshed.error)throw refreshed.error;courses=refreshed.data||[];
  }
  render();
 }
