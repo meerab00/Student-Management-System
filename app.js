@@ -21,7 +21,7 @@ async function loadData(){
   db.from("attendance").select("*").eq("user_id",currentUser.id).order("attendance_date",{ascending:false})
  ]);
  for(const r of [c,s,a]) if(r.error) throw r.error;
- const profile=await db.from("institution_profiles").select("institution_name").eq("user_id",currentUser.id).maybeSingle();if(profile.error)throw profile.error;if(!profile.data){const created=await db.from("institution_profiles").insert({institution_name:"Your institution"});if(created.error)throw created.error;setInstitutionName("Your institution");}else setInstitutionName(profile.data.institution_name);
+ const profile=await db.from("institution_profiles").select("institution_name").eq("user_id",currentUser.id).maybeSingle();if(profile.error)throw profile.error;if(!profile.data){const created=await db.from("institution_profiles").insert({user_id:currentUser.id,institution_name:"Your institution"});if(created.error)throw created.error;setInstitutionName("Your institution");}else setInstitutionName(profile.data.institution_name);
  courses=c.data||[]; students=(s.data||[]).map(x=>({...x,id:x.id,studentNumber:x.student_number,name:x.full_name,email:x.email,phone:x.phone,courseId:x.course_id,active:x.is_active,fatherName:x.father_name||"",fatherCnic:x.father_cnic||"",motherName:x.mother_name||"",motherCnic:x.mother_cnic||"",guardianPhone:x.guardian_phone||"",dateOfBirth:x.date_of_birth||"",gender:x.gender||"",address:x.address||"",admissionDate:x.admission_date||""}));
  attendance={};(a.data||[]).forEach(x=>{attendance[x.attendance_date] ||= {};attendance[x.attendance_date][x.student_id]=x.status});
  if(!courses.length){
