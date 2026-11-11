@@ -53,6 +53,21 @@ function renderAttendance(){
  $("attendanceTable").innerHTML=students.filter(s=>s.active).map(s=>`<tr><td>${studentMarkup(s)}</td><td>${escapeHTML(s.studentNumber)}</td><td>${escapeHTML(courseName(s.courseId))}</td><td><select class="attendance-select" data-attendance="${s.id}"><option value="" ${!records[s.id]?"selected":""}>Select status</option><option value="Present" ${records[s.id]==="Present"?"selected":""}>Present</option><option value="Absent" ${records[s.id]==="Absent"?"selected":""}>Absent</option><option value="Late" ${records[s.id]==="Late"?"selected":""}>Late</option></select></td></tr>`).join("")||'<tr><td colspan="4" class="empty-state">Add active students before taking attendance.</td></tr>';
 }
 function render(){renderDashboard();renderStudents();renderCourses();renderAttendance()}
+function csvCell(value){return '"'+String(value??"").replace(/"/g,'""')+'"'}
+function downloadCSV(filename,headers,rows){
+ const content=[headers,...rows].map(row=>row.map(csvCell).join(",")).join("\r\n");
+ const blob=new Blob(["\\uFEFF",content],{type:"text/csv;charset=utf-8;"});
+ const url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download=filename;document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url);
+}
+function exportStudents(){
+ downloadCSV("campusdesk-students-"+today()+".csv",["Student ID","Full name","Email","Phone","Course","Status"],students.map(s=>[s.studentNumber,s.name,s.email,s.phone,courseName(s.courseId),s.active?"Active":"Inactive"]));
+ toast("Student list exported.");
+}
+function exportAttendance(){
+ const date=$("attendanceDate").value||today(),records=attendance[date]||{};
+ const rows=students.filter(s=>s.active).map(s=>[s.studentNumber,s.name,courseName(s.courseId),records[s.id]||"Not marked"]);
+ downloadCSV("campusdesk-attendance-"+date+".csv",["Student ID","Full name","Course","Attendance"],rows);toast("Attendance report exported.");
+}
 function showPage(page){document.querySelectorAll(".page-view").forEach(v=>v.classList.remove("active"));$(page+"Page").classList.add("active");document.querySelectorAll(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.page===page));$("pageCrumb").textContent=page[0].toUpperCase()+page.slice(1);$("sidebar").classList.remove("open");render()}
 function openStudentModal(student=null){
  $("studentForm").reset();$("editStudentId").value=student?.id||"";$("modalTitle").textContent=student?"Edit student":"Add student";$("studentId").disabled=false;
@@ -68,7 +83,7 @@ async function handleAuth(e){
   const result=await db.auth.signInWithPassword({email,password});
   if(result.error)throw result.error;
   currentUser=result.data.user;showApp();await loadData();
- }catch(err){$("authMessage").textContent=err.message||"Unable to sign in."}
+ }catch(err){await db.auth.signOut();currentUser=null;showAuth(err.message||"Unable to sign in.")}
  finally{$("authSubmit").disabled=false}
 }
 $("authForm").addEventListener("submit",handleAuth);
@@ -95,7 +110,7 @@ $("studentForm").addEventListener("submit",async e=>{
  closeModal();await loadData();toast(oldId?"Student updated.":"Student added successfully.");
 });
 $("closeModal").addEventListener("click",closeModal);$("cancelModal").addEventListener("click",closeModal);$("modalBackdrop").addEventListener("click",e=>{if(e.target===$("modalBackdrop"))closeModal()});
-$("studentSearch").addEventListener("input",renderStudents);$("attendanceDate").addEventListener("change",renderAttendance);
+$("studentSearch").addEventListener("input",renderStudents);$("attendanceDate").addEventListener("change",renderAttendance);$("exportStudents").addEventListener("click",exportStudents);$("exportAttendance").addEventListener("click",exportAttendance);
 $("saveAttendance").addEventListener("click",async()=>{
  const date=$("attendanceDate").value||today();const controls=[...document.querySelectorAll("[data-attendance]")];
  if(!controls.length)return toast("There are no active students to mark.");
@@ -108,5 +123,5 @@ $("menuBtn").addEventListener("click",()=>$("sidebar").classList.toggle("open"))
 $("logoutBtn").addEventListener("click",async()=>{await db.auth.signOut();currentUser=null;showAuth("You have signed out.")});
 $("todayDate").textContent=new Intl.DateTimeFormat("en",{weekday:"short",month:"short",day:"numeric",year:"numeric"}).format(new Date());
 $("attendanceDate").value=today();$("year").textContent=new Date().getFullYear();
-db.auth.getSession().then(async({data,error})=>{if(error)return showAuth(error.message);if(data.session){currentUser=data.session.user;showApp();try{await loadData()}catch(err){toast(err.message)}}else showAuth()});
+db.auth.getSession().then(async({data,error})=>{if(error)return showAuth(error.message);if(data.session){currentUser=data.session.user;showApp();try{await loadData()}catch(err){await db.auth.signOut();currentUser=null;showAuth("Could not load records: "+err.message)}}else showAuth()});
 db.auth.onAuthStateChange((_event,session)=>{if(!session){currentUser=null;showAuth()}});
