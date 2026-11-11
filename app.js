@@ -56,11 +56,15 @@ function openCourseModal(course=null){
  $("courseModalBackdrop").classList.add("open");$("courseName").focus();
 }
 function closeCourseModal(){$("courseModalBackdrop").classList.remove("open")}
+function renderAttendance(){
+ const date=$("attendanceDate").value||today();const records=attendance[date]||{};
+ $("attendanceTable").innerHTML=students.filter(s=>s.active).map(s=>'<tr><td>'+studentMarkup(s)+'</td><td>'+escapeHTML(s.studentNumber)+'</td><td>'+escapeHTML(courseName(s.courseId))+'</td><td><select class="attendance-select" data-attendance="'+s.id+'"><option value="" '+(!records[s.id]?"selected":"") +'>Select status</option><option value="Present" '+(records[s.id]==="Present"?"selected":"") +'>Present</option><option value="Absent" '+(records[s.id]==="Absent"?"selected":"") +'>Absent</option><option value="Late" '+(records[s.id]==="Late"?"selected":"") +'>Late</option></select></td></tr>').join("")||'<tr><td colspan="4" class="empty-state">Add active students before taking attendance.</td></tr>';
+}
 function render(){renderDashboard();renderStudents();renderCourses();renderAttendance()}
 function csvCell(value){return '"'+String(value??"").replace(/"/g,'""')+'"'}
 function downloadCSV(filename,headers,rows){
  const content=[headers,...rows].map(row=>row.map(csvCell).join(",")).join("\r\n");
- const blob=new Blob(["\\uFEFF",content],{type:"text/csv;charset=utf-8;"});
+ const blob=new Blob([String.fromCharCode(0xFEFF),content],{type:"text/csv;charset=utf-8;"});
  const url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download=filename;document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url);
 }
 function exportStudents(){
