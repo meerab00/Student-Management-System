@@ -93,6 +93,7 @@
       </div><div class="modal-actions"><button type="button" class="secondary-btn" id="cancelModal">Cancel</button><button type="submit" class="primary-btn">Save student</button></div></form>
     </section>
   </div>
+  <div class="modal-backdrop" id="courseModalBackdrop"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="courseModalTitle"><div class="modal-head"><div><div class="eyebrow">ACADEMIC SETUP</div><h2 id="courseModalTitle">Add course</h2></div><button class="icon-btn" id="closeCourseModal" aria-label="Close">×</button></div><form id="courseForm"><input type="hidden" id="editCourseId"><div class="form-grid"><label>Course name<input id="courseName" required maxlength="100" placeholder="e.g. BS Mathematics"></label><label>Course code<input id="courseCode" required maxlength="20" placeholder="e.g. MTH-101"></label><label class="full-field">Description<input id="courseDescription" maxlength="180" placeholder="Short course description"></label><label class="full-field">Duration<input id="courseDuration" maxlength="40" placeholder="e.g. 4 years"></label></div><div class="modal-actions"><button type="button" class="secondary-btn" id="cancelCourseModal">Cancel</button><button type="submit" class="primary-btn">Save course</button></div></form></section></div>
   <div class="toast" id="toast" role="status"></div>
 </body>
 </html>
