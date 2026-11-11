@@ -1,11 +1,16 @@
 /* CampusDesk academic modules: subjects, teachers, exams, results, fees and timetable */
 (() => {
   const $m = id => document.getElementById(id);
-  const state = { subjects:[], teachers:[], exams:[], results:[], fees:[], timetable:[] };
+  const state = { subjects:[], enrollments:[], teachers:[], exams:[], results:[], fees:[], timetable:[] };
   const configs = {
     subjects:{title:"Subject",table:"subjects",fields:[
       {key:"name",label:"Subject name",required:true},{key:"code",label:"Subject code",required:true},
       {key:"course_id",label:"Course",type:"select",source:"courses",required:true}]},
+    enrollments:{title:"Enrollment",table:"enrollments",fields:[
+      {key:"student_id",label:"Student",type:"select",source:"students",required:true},
+      {key:"course_id",label:"Course",type:"select",source:"courses",required:true},
+      {key:"enrolled_on",label:"Enrollment date",type:"date",default:new Date().toISOString().slice(0,10)},
+      {key:"status",label:"Status",type:"select",options:[["Active","Active"],["Completed","Completed"],["Withdrawn","Withdrawn"]],default:"Active",required:true}]},
     teachers:{title:"Teacher",table:"teachers",fields:[
       {key:"full_name",label:"Full name",required:true},{key:"email",label:"Email",type:"email"},
       {key:"phone",label:"Phone"},{key:"specialization",label:"Specialization"}]},
@@ -42,13 +47,14 @@
   const examLabel = id => state.exams.find(x=>x.id===id)?.title || "—";
   const money = value => "Rs " + Number(value||0).toLocaleString("en-PK");
   async function loadAcademicModules(){
-    const tables = ["subjects","teachers","exams","results","fee_records","timetable"];
+    const tables = ["subjects","enrollments","teachers","exams","results","fee_records","timetable"];
     const responses = await Promise.all(tables.map(table=>db.from(table).select("*").eq("user_id",currentUser.id)));
-    responses.forEach((r,i)=>{if(r.error)throw r.error;state[["subjects","teachers","exams","results","fees","timetable"][i]]=r.data||[];});
+    responses.forEach((r,i)=>{if(r.error)throw r.error;state[["subjects","enrollments","teachers","exams","results","fees","timetable"][i]]=r.data||[];});
     renderModules();
   }
   function renderModules(){
     $m("subjectsTable").innerHTML = state.subjects.map(x=>`<tr><td>${escape(x.name)}</td><td>${escape(x.code)}</td><td>${escape(courseLabel(x.course_id))}</td><td><button class="action-btn" data-module-edit="subjects" data-id="${x.id}">Edit</button><button class="action-btn delete" data-module-delete="subjects" data-id="${x.id}">Delete</button></td></tr>`).join("") || '<tr><td colspan="4" class="empty-state">No subjects yet.</td></tr>';
+    $m("enrollmentsTable").innerHTML = state.enrollments.map(x=>{const student=students.find(s=>s.id===x.student_id);return "<tr><td>"+escape(student?.name||"—")+"</td><td>"+escape(student?.studentNumber||"—")+"</td><td>"+escape(courseLabel(x.course_id))+"</td><td>"+escape(x.enrolled_on||"—")+"</td><td>"+escape(x.status)+"</td><td><button class=\"action-btn\" data-module-edit=\"enrollments\" data-id=\""+x.id+"\">Edit</button><button class=\"action-btn delete\" data-module-delete=\"enrollments\" data-id=\""+x.id+"\">Delete</button></td></tr>"}).join("") || "<tr><td colspan=\"6\" class=\"empty-state\">No enrollments yet.</td></tr>";
     $m("teachersTable").innerHTML = state.teachers.map(x=>`<tr><td><b>${escape(x.full_name)}</b></td><td>${escape(x.email)}</td><td>${escape(x.phone)}</td><td>${escape(x.specialization)}</td><td><button class="action-btn" data-module-edit="teachers" data-id="${x.id}">Edit</button><button class="action-btn delete" data-module-delete="teachers" data-id="${x.id}">Delete</button></td></tr>`).join("") || '<tr><td colspan="5" class="empty-state">No teachers yet.</td></tr>';
     $m("examsTable").innerHTML = state.exams.map(x=>`<tr><td>${escape(x.title)}</td><td>${escape(courseLabel(x.course_id))}</td><td>${escape(subjectLabel(x.subject_id))}</td><td>${escape(x.exam_date||"—")}</td><td>${escape(x.total_marks)}</td><td><button class="action-btn" data-module-edit="exams" data-id="${x.id}">Edit</button><button class="action-btn delete" data-module-delete="exams" data-id="${x.id}">Delete</button></td></tr>`).join("") || '<tr><td colspan="6" class="empty-state">No exams scheduled yet.</td></tr>';
     $m("resultsTable").innerHTML = state.results.map(x=>{const exam=state.exams.find(e=>e.id===x.exam_id);const pct=exam?Math.round(Number(x.obtained_marks)/Number(exam.total_marks)*100):0;const grade=pct>=80?"A":pct>=70?"B":pct>=60?"C":pct>=50?"D":"F";return `<tr><td>${escape(studentLabel(x.student_id))}</td><td>${escape(examLabel(x.exam_id))}</td><td>${escape(x.obtained_marks)} / ${escape(exam?.total_marks||"—")}</td><td>${pct}%</td><td><span class="pill ${grade==="F"?"inactive":""}">${grade}</span></td></tr>`}).join("") || '<tr><td colspan="5" class="empty-state">No results recorded yet.</td></tr>';
@@ -63,7 +69,7 @@
     if($m("statSubjects"))$m("statSubjects").textContent=state.subjects.length;
     if($m("statPendingFees"))$m("statPendingFees").textContent=money(pending);
     if($m("statExams"))$m("statExams").textContent=upcoming;
-    if($m("academicSnapshot"))$m("academicSnapshot").innerHTML=`<div><span>Teachers</span><b>${state.teachers.length}</b></div><div><span>Subjects</span><b>${state.subjects.length}</b></div><div><span>Exams scheduled</span><b>${upcoming}</b></div><div><span>Outstanding fees</span><b>${money(pending)}</b></div><div><span>Results recorded</span><b>${state.results.length}</b></div>`;
+    if($m("academicSnapshot"))$m("academicSnapshot").innerHTML=`<div><span>Teachers</span><b>${state.teachers.length}</b></div><div><span>Subjects</span><b>${state.subjects.length}</b></div><div><span>Exams scheduled</span><b>${upcoming}</b></div><div><span>Outstanding fees</span><b>${money(pending)}</b></div><div><span>Results recorded</span><b>${state.results.length}</b></div><div><span>Course enrollments</span><b>${state.enrollments.length}</b></div>`;
   }
   function sourceOptions(field){
     let rows = field.source==="courses" ? courses : field.source==="students" ? students : field.source==="subjects" ? state.subjects : field.source==="teachers" ? state.teachers : state.exams;
