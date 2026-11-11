@@ -35,6 +35,19 @@ create table if not exists public.attendance (
   unique(student_id, attendance_date)
 );
 
+
+-- Extended admission profile fields used by the student form.
+-- These ALTER statements also upgrade databases created with the earlier schema.
+alter table public.students add column if not exists father_name text default '';
+alter table public.students add column if not exists father_cnic text default '';
+alter table public.students add column if not exists mother_name text default '';
+alter table public.students add column if not exists mother_cnic text default '';
+alter table public.students add column if not exists guardian_phone text default '';
+alter table public.students add column if not exists date_of_birth date;
+alter table public.students add column if not exists gender text;
+alter table public.students add column if not exists address text default '';
+alter table public.students add column if not exists admission_date date;
+
 -- Add ownership columns safely if the tables already existed from the earlier schema.
 alter table public.courses add column if not exists user_id uuid default auth.uid() references auth.users(id) on delete cascade;
 alter table public.students add column if not exists user_id uuid default auth.uid() references auth.users(id) on delete cascade;
