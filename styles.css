@@ -135,3 +135,27 @@
 .recent-panel{grid-column:1/-1}
 @media(max-width:1050px){.dashboard-grid{grid-template-columns:1fr}.recent-panel{grid-column:auto}}
 @media(max-width:720px){.attendance-summary{justify-content:space-around;gap:12px}.attendance-ring{width:132px;height:132px;flex-basis:132px}.attendance-ring strong{font-size:25px}.attendance-legend{gap:12px}}
+
+
+/* CampusDesk academic workspace upgrade */
+.nav-group-label{margin-top:18px;padding-top:15px;border-top:1px solid var(--line)}
+.nav-list{overflow-y:auto;min-height:0;padding-right:2px}
+.demo-ribbon{display:flex;align-items:center;gap:9px;margin:-8px 0 18px;padding:10px 13px;border:1px solid #e8e5ff;border-radius:10px;background:#f5f3ff;color:#6557bd;font-size:10px;font-weight:800;letter-spacing:.65px}
+.demo-dot{width:7px;height:7px;border-radius:50%;background:#8b7df0;box-shadow:0 0 0 4px #e6e2ff}
+.stats-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+.insight-panel{grid-column:1/-1}
+.snapshot-list{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.snapshot-list>div{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 14px;background:#f8f8fc;border:1px solid var(--line);border-radius:10px;color:var(--muted);font-size:11px}
+.snapshot-list b{color:var(--ink);font:700 13px Manrope,sans-serif;text-align:right}
+.module-page .panel{margin-bottom:18px}
+.module-subpanel{margin-top:18px}
+.module-modal{width:min(650px,100%);max-height:min(820px,calc(100dvh - 32px));display:flex;flex-direction:column;overflow:hidden}
+.module-modal form{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.module-modal #moduleFormFields{overflow-y:auto;min-height:0;flex:1 1 auto;padding:2px 5px 12px 2px}
+.module-modal .modal-actions{flex:0 0 auto;padding-top:12px;border-top:1px solid var(--line)}
+.module-modal .form-grid label{min-width:0}
+.module-modal .form-grid input,.module-modal .form-grid select{min-width:0}
+.finance-stats{margin:0 0 18px}
+.finance-stats .stat-card>strong{font-size:22px}
+@media(max-width:1050px){.snapshot-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:720px){.stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.snapshot-list{grid-template-columns:1fr}.module-modal{max-height:calc(100dvh - 16px)}.module-modal #moduleFormFields{grid-template-columns:1fr}}
