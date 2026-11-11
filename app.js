@@ -36,8 +36,8 @@ async function loadData(){
 function studentMarkup(s){return `<div class="student-cell"><span class="mini-avatar">${initials(s.name)}</span><span><b>${escapeHTML(s.name)}</b><small>${escapeHTML(s.email)}</small></span></div>`}
 function renderDashboard(){
  $("statStudents").textContent=students.length;$("statCourses").textContent=courses.length;
- const records=attendance[$("attendanceDate").value||today()]||{};const present=Object.values(records).filter(v=>v==="Present").length;
- $("statPresent").textContent=present;$("statRate").textContent=students.length?Math.round(present/students.length*100)+"%":"0%";
+ const records=attendance[$("attendanceDate").value||today()]||{};const marked=Object.values(records).filter(v=>["Present","Absent","Late"].includes(v)).length;const present=Object.values(records).filter(v=>v==="Present").length;
+ $("statPresent").textContent=present;$("statRate").textContent=marked?Math.round(present/marked*100)+"%":"0%";
  $("recentStudents").innerHTML=students.slice(0,5).map(s=>`<tr><td>${studentMarkup(s)}</td><td>${escapeHTML(s.studentNumber)}</td><td>${escapeHTML(courseName(s.courseId))}</td><td><span class="pill ${s.active?"":"inactive"}">${s.active?"Active":"Inactive"}</span></td></tr>`).join("")||'<tr><td colspan="4" class="empty-state">No students yet.</td></tr>';
 }
 function renderStudents(){
@@ -50,7 +50,7 @@ function renderCourses(){
 }
 function renderAttendance(){
  const date=$("attendanceDate").value||today();const records=attendance[date]||{};
- $("attendanceTable").innerHTML=students.map(s=>`<tr><td>${studentMarkup(s)}</td><td>${escapeHTML(s.studentNumber)}</td><td>${escapeHTML(courseName(s.courseId))}</td><td><select class="attendance-select" data-attendance="${s.id}"><option ${(records[s.id]||"Present")==="Present"?"selected":""}>Present</option><option ${records[s.id]==="Absent"?"selected":""}>Absent</option><option ${records[s.id]==="Late"?"selected":""}>Late</option></select></td></tr>`).join("")||'<tr><td colspan="4" class="empty-state">Add students before taking attendance.</td></tr>';
+ $("attendanceTable").innerHTML=students.filter(s=>s.active).map(s=>`<tr><td>${studentMarkup(s)}</td><td>${escapeHTML(s.studentNumber)}</td><td>${escapeHTML(courseName(s.courseId))}</td><td><select class="attendance-select" data-attendance="${s.id}"><option value="" ${!records[s.id]?"selected":""}>Select status</option><option value="Present" ${records[s.id]==="Present"?"selected":""}>Present</option><option value="Absent" ${records[s.id]==="Absent"?"selected":""}>Absent</option><option value="Late" ${records[s.id]==="Late"?"selected":""}>Late</option></select></td></tr>`).join("")||'<tr><td colspan="4" class="empty-state">Add active students before taking attendance.</td></tr>';
 }
 function render(){renderDashboard();renderStudents();renderCourses();renderAttendance()}
 function showPage(page){document.querySelectorAll(".page-view").forEach(v=>v.classList.remove("active"));$(page+"Page").classList.add("active");document.querySelectorAll(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.page===page));$("pageCrumb").textContent=page[0].toUpperCase()+page.slice(1);$("sidebar").classList.remove("open");render()}
@@ -97,8 +97,10 @@ $("studentForm").addEventListener("submit",async e=>{
 $("closeModal").addEventListener("click",closeModal);$("cancelModal").addEventListener("click",closeModal);$("modalBackdrop").addEventListener("click",e=>{if(e.target===$("modalBackdrop"))closeModal()});
 $("studentSearch").addEventListener("input",renderStudents);$("attendanceDate").addEventListener("change",renderAttendance);
 $("saveAttendance").addEventListener("click",async()=>{
- const date=$("attendanceDate").value||today();const rows=[...document.querySelectorAll("[data-attendance]")].map(el=>({student_id:el.dataset.attendance,attendance_date:date,status:el.value}));
- if(!rows.length)return toast("There are no students to mark.");
+ const date=$("attendanceDate").value||today();const controls=[...document.querySelectorAll("[data-attendance]")];
+ if(!controls.length)return toast("There are no active students to mark.");
+ if(controls.some(el=>!el.value))return toast("Please select an attendance status for every active student.");
+ const rows=controls.map(el=>({student_id:el.dataset.attendance,attendance_date:date,status:el.value}));
  const {error}=await db.from("attendance").upsert(rows,{onConflict:"student_id,attendance_date"});if(error)return toast(error.message);
  await loadData();toast("Attendance saved for "+date+".");
 });
