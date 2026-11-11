@@ -84,24 +84,13 @@
 
   <div class="modal-backdrop" id="modalBackdrop">
     <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal-head"><div><div class="eyebrow">STUDENT RECORD</div><h2 id="modalTitle">Add student</h2></div><button class="icon-btn" id="closeModal" aria-label="Close">×</button></div>
-      <form id="studentForm"><input type="hidden" id="editStudentId"><div class="form-section-title">Student information</div><div class="form-grid">
-        <label>Student full name<input id="studentName" required maxlength="120" placeholder="e.g. Ayesha Khan"></label>
-        <label>Student ID / Registration No.<input id="studentId" required maxlength="40" placeholder="e.g. STU-1001"></label>
-        <label>Date of birth<input id="studentDob" type="date"></label>
-        <label>Gender<select id="studentGender"><option value="">Select gender</option><option>Female</option><option>Male</option><option>Other</option></select></label>
-        <label>Email address<input id="studentEmail" type="email" required placeholder="student@example.com"></label>
-        <label>Student phone<input id="studentPhone" placeholder="03XX-XXXXXXX"></label>
-        <label class="full-field">Course / Subject<select id="studentCourse" required></select></label>
-      </div><div class="form-section-title">Parent / guardian information</div><div class="form-grid">
-        <label>Father's name<input id="fatherName" maxlength="120" placeholder="Father's full name"></label>
-        <label>Father's CNIC<input id="fatherCnic" inputmode="numeric" maxlength="15" placeholder="XXXXX-XXXXXXX-X"></label>
-        <label>Mother's name<input id="motherName" maxlength="120" placeholder="Mother's full name"></label>
-        <label>Mother's CNIC<input id="motherCnic" inputmode="numeric" maxlength="15" placeholder="XXXXX-XXXXXXX-X"></label>
-        <label class="full-field">Parent / guardian contact<input id="guardianPhone" placeholder="03XX-XXXXXXX"></label>
-        <label class="full-field">Home address<textarea id="studentAddress" rows="2" placeholder="Complete residential address"></textarea></label>
-      </div><div class="form-section-title">Admission information</div><div class="form-grid">
-        <label>Admission date<input id="admissionDate" type="date"></label>
-      </div><div class="modal-actions"><button type="button" class="secondary-btn" id="cancelModal">Cancel</button><button type="submit" class="primary-btn">Save student</button></div></form>
+      <form id="studentForm"><input type="hidden" id="editStudentId"><div class="form-grid">
+        <label>Student name<input id="studentName" required maxlength="120" placeholder="e.g. Ayesha Khan"></label>
+        <label>Student ID<input id="studentId" required maxlength="40" placeholder="e.g. STU-1001"></label>
+        <label>Subject / Course<select id="studentCourse" required></select></label>
+        <label>Phone number<input id="studentPhone" type="tel" placeholder="03XX-XXXXXXX"></label>
+        <label class="full-field">Gmail address<input id="studentEmail" type="email" required placeholder="student@gmail.com"></label>
+      </div><div class="modal-actions"><button type="button" class="secondary-btn" id="cancelModal">Cancel</button><button type="submit" class="primary-btn" id="saveStudentBtn">Save student</button></div></form>
     </section>
   </div>
   <div class="modal-backdrop" id="studentDetailsBackdrop"><section class="modal details-modal" role="dialog" aria-modal="true" aria-labelledby="studentDetailsTitle"><div class="modal-head"><div><div class="eyebrow">COMPLETE ADMISSION FILE</div><h2 id="studentDetailsTitle">Student details</h2></div><button class="icon-btn" id="closeStudentDetails" aria-label="Close">×</button></div><div id="studentDetailsContent" class="student-details-grid"></div><div class="modal-actions"><button type="button" class="secondary-btn" id="closeStudentDetailsBtn">Close</button></div></section></div>
