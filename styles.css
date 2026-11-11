@@ -87,3 +87,29 @@
   #studentForm .full-field{grid-column:1}
   #studentForm .modal-actions{padding:10px 0 2px}
 }
+
+
+/* Final sizing fix: give the admission dialog a definite height so its
+   inner form can scroll and the Save/Cancel row remains in view. */
+#modalBackdrop .modal{
+  height:min(820px, calc(100vh - 32px));
+  height:min(820px, calc(100dvh - 32px));
+  min-height:0;
+}
+#modalBackdrop #studentForm{
+  height:100%;
+  min-height:0;
+  flex:1 1 0;
+}
+#modalBackdrop #studentForm .form-grid{
+  flex:1 1 0;
+  min-height:0;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+}
+@media(max-width:720px){
+  #modalBackdrop .modal{
+    height:calc(100vh - 16px);
+    height:calc(100dvh - 16px);
+  }
+}
