@@ -12,6 +12,7 @@ CampusDesk is a responsive, browser-based Student Management System. It uses Sup
 - Export student lists and date-wise attendance reports as CSV
 - Supabase Row Level Security: each signed-in account can access only its own records
 - Responsive layout for desktop and mobile browsers
+- Floating CampusDesk Assistant chat widget with guided answers for common student, course, attendance, search, export and sign-in questions
 
 ## Main workflows
 
@@ -24,10 +25,14 @@ CampusDesk is a responsive, browser-based Student Management System. It uses Sup
 
 ## Technology
 
-- Frontend: HTML, CSS and JavaScript
+- Frontend: HTML, CSS and JavaScript (including the in-page help chatbot)
 - Authentication and database: Supabase Auth and PostgreSQL
 - Repository and version control: GitHub
 - Static hosting: GitHub Pages
+
+## Built-in chatbot
+
+The floating **CampusDesk Assistant** opens from the bottom-right corner of the website. This first version is a guided FAQ chatbot implemented in browser JavaScript; it does not send messages to an external AI model and does not require an API key. It answers common how-to questions about the existing website. A generative ChatGPT-style backend can be added later through a secured Supabase Edge Function and a server-side AI provider key; that key must never be placed in `chatbot.js` or other browser files.
 
 ## Database setup
 
