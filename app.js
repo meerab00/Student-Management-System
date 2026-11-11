@@ -3,6 +3,7 @@ const SUPABASE_URL = "https://nmtgfdjxgjxxdxibiavv.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_ZxDemHTHOicSps8_LYRoyA_q56R5k-z";
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let currentUser = null;
+let institutionName = "Your institution";
 let students = [], courses = [], attendance = {};
 const $ = id => document.getElementById(id);
 const today = () => { const d=new Date(); const local=new Date(d.getTime()-d.getTimezoneOffset()*60000); return local.toISOString().slice(0,10); };
@@ -12,6 +13,7 @@ function initials(name){return String(name||"?").split(/\s+/).slice(0,2).map(x=>
 function courseName(id){return courses.find(c=>c.id===id)?.name||"Not assigned"}
 function showAuth(message=""){ $("authScreen").hidden=false;$("appShell").hidden=true;if(message) $("authMessage").textContent=message; }
 function showApp(){ $("authScreen").hidden=true;$("appShell").hidden=false;$("connectionLabel").textContent="Supabase connected";$("profileEmail").textContent=currentUser?.email||"Administrator"; }
+function setInstitutionName(name){institutionName=String(name||"Your institution").trim()||"Your institution";$("institutionNameLabel").textContent=institutionName;$("institutionNameInput").value=institutionName;}
 async function loadData(){
  const [c,s,a]=await Promise.all([
   db.from("courses").select("*").eq("user_id",currentUser.id).order("name"),
@@ -19,6 +21,7 @@ async function loadData(){
   db.from("attendance").select("*").eq("user_id",currentUser.id).order("attendance_date",{ascending:false})
  ]);
  for(const r of [c,s,a]) if(r.error) throw r.error;
+ const profile=await db.from("institution_profiles").select("institution_name").eq("user_id",currentUser.id).maybeSingle();if(profile.error)throw profile.error;if(!profile.data){const created=await db.from("institution_profiles").insert({institution_name:"Your institution"});if(created.error)throw created.error;setInstitutionName("Your institution");}else setInstitutionName(profile.data.institution_name);
  courses=c.data||[]; students=(s.data||[]).map(x=>({...x,id:x.id,studentNumber:x.student_number,name:x.full_name,email:x.email,phone:x.phone,courseId:x.course_id,active:x.is_active}));
  attendance={};(a.data||[]).forEach(x=>{attendance[x.attendance_date] ||= {};attendance[x.attendance_date][x.student_id]=x.status});
  if(!courses.length){
@@ -95,6 +98,10 @@ async function handleAuth(e){
  finally{$("authSubmit").disabled=false}
 }
 $("authForm").addEventListener("submit",handleAuth);
+function closeInstitutionModal(){$("institutionModalBackdrop").classList.remove("open")}
+$("institutionSettingsBtn").addEventListener("click",()=>{$("institutionNameInput").value=institutionName;$("institutionModalBackdrop").classList.add("open")});
+$("closeInstitutionModal").addEventListener("click",closeInstitutionModal);$("cancelInstitutionModal").addEventListener("click",closeInstitutionModal);$("institutionModalBackdrop").addEventListener("click",e=>{if(e.target===$("institutionModalBackdrop"))closeInstitutionModal()});
+$("institutionForm").addEventListener("submit",async e=>{e.preventDefault();const name=$("institutionNameInput").value.trim();if(!name)return toast("Please enter your institution name.");$("saveInstitutionBtn").disabled=true;const {error}=await db.from("institution_profiles").upsert({user_id:currentUser.id,institution_name:name,updated_at:new Date().toISOString()},{onConflict:"user_id"});$("saveInstitutionBtn").disabled=false;if(error)return toast(error.message);setInstitutionName(name);closeInstitutionModal();toast("Institution profile saved.");});
 document.addEventListener("click",async e=>{
  const nav=e.target.closest("[data-page]");if(nav)showPage(nav.dataset.page);
  const go=e.target.closest("[data-go]");if(go)showPage(go.dataset.go);
