@@ -16,3 +16,5 @@
 .auth-toggle{border:0;background:transparent;color:#5b55c7;font-weight:700;cursor:pointer;padding:8px}
 
 .toolbar-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.secondary-btn:hover{background:#e9eaf1}@media(max-width:720px){.toolbar-actions{width:100%;justify-content:space-between}}
+
+.course-actions{display:flex;gap:6px;border-top:1px solid var(--line);padding-top:12px;margin-top:13px}.course-card .course-meta{flex-wrap:wrap;gap:8px}
