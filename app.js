@@ -87,12 +87,12 @@ function showPage(page){document.querySelectorAll(".page-view").forEach(v=>v.cla
 function openStudentModal(student=null){
  $("studentForm").reset();$("editStudentId").value=student?.id||"";$("modalTitle").textContent=student?"Edit student":"Add student";$("studentId").disabled=false;
  $("studentCourse").innerHTML=courses.map(c=>`<option value="${c.id}">${escapeHTML(c.name)}</option>`).join("");
- if(student){$("studentName").value=student.name;$("studentId").value=student.studentNumber;$("studentEmail").value=student.email;$("studentPhone").value=student.phone||"";$("studentCourse").value=student.courseId||"";}
+ if(student){$("studentName").value=student.name;$("studentId").value=student.studentNumber;$("studentEmail").value=student.email;$("studentPhone").value=student.phone||"";$("studentCourse").value=student.courseId||"";$("fatherName").value=student.fatherName||"";$("fatherCnic").value=student.fatherCnic||"";$("motherName").value=student.motherName||"";$("motherCnic").value=student.motherCnic||"";$("guardianPhone").value=student.guardianPhone||"";$("dateOfBirth").value=student.dateOfBirth||"";$("gender").value=student.gender||"";$("studentAddress").value=student.address||"";$("admissionDate").value=student.admissionDate||"";}
  $("modalBackdrop").classList.add("open");
 }
 function closeModal(){$("modalBackdrop").classList.remove("open");$("studentId").disabled=false}
 function showStudentDetails(student){
- const fields=[["Student name",student.name],["Student ID",student.studentNumber],["Subject / Course",courseName(student.courseId)],["Phone number",student.phone],["Gmail address",student.email]];
+ const fields=[["Student name",student.name],["Student ID",student.studentNumber],["Date of birth",student.dateOfBirth],["Gender",student.gender],["Subject / Course",courseName(student.courseId)],["Phone number",student.phone],["Gmail address",student.email],["Father name",student.fatherName],["Father CNIC",student.fatherCnic],["Mother name",student.motherName],["Mother CNIC",student.motherCnic],["Parent / guardian phone",student.guardianPhone],["Address",student.address],["Admission date",student.admissionDate]];
  $("studentDetailsTitle").textContent=student.name+" — Student details";
  $("studentDetailsContent").innerHTML=fields.map(([label,value])=>'<div class="detail-item"><small>'+escapeHTML(label)+'</small><strong>'+escapeHTML(value||"Not provided")+'</strong></div>').join("");
  $("studentDetailsBackdrop").classList.add("open");
@@ -139,6 +139,15 @@ $("studentForm").addEventListener("submit",async e=>{
   email:$("studentEmail").value.trim(),
   phone:$("studentPhone").value.trim(),
   course_id:$("studentCourse").value||null,
+  father_name:$("fatherName").value.trim(),
+  father_cnic:$("fatherCnic").value.trim(),
+  mother_name:$("motherName").value.trim(),
+  mother_cnic:$("motherCnic").value.trim(),
+  guardian_phone:$("guardianPhone").value.trim(),
+  date_of_birth:$("dateOfBirth").value||null,
+  gender:$("gender").value||null,
+  address:$("studentAddress").value.trim(),
+  admission_date:$("admissionDate").value||null,
   is_active:existing?existing.active:true
  };
  try{
