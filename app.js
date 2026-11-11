@@ -55,25 +55,23 @@ function renderAttendance(){
 function render(){renderDashboard();renderStudents();renderCourses();renderAttendance()}
 function showPage(page){document.querySelectorAll(".page-view").forEach(v=>v.classList.remove("active"));$(page+"Page").classList.add("active");document.querySelectorAll(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.page===page));$("pageCrumb").textContent=page[0].toUpperCase()+page.slice(1);$("sidebar").classList.remove("open");render()}
 function openStudentModal(student=null){
- $("studentForm").reset();$("editStudentId").value=student?.id||"";$("modalTitle").textContent=student?"Edit student":"Add student";$("studentId").disabled=Boolean(student);
+ $("studentForm").reset();$("editStudentId").value=student?.id||"";$("modalTitle").textContent=student?"Edit student":"Add student";$("studentId").disabled=false;
  $("studentCourse").innerHTML=courses.map(c=>`<option value="${c.id}">${escapeHTML(c.name)}</option>`).join("");
  if(student){$("studentName").value=student.name;$("studentId").value=student.studentNumber;$("studentEmail").value=student.email;$("studentPhone").value=student.phone||"";$("studentCourse").value=student.courseId||""}
  $("modalBackdrop").classList.add("open");
 }
 function closeModal(){$("modalBackdrop").classList.remove("open");$("studentId").disabled=false}
 async function handleAuth(e){
- e.preventDefault();const mode=$("authMode").value,email=$("authEmail").value.trim(),password=$("authPassword").value;
+ e.preventDefault();const email=$("authEmail").value.trim(),password=$("authPassword").value;
  $("authSubmit").disabled=true;$("authMessage").textContent="Please wait…";
  try{
-  const result=mode==="signup"?await db.auth.signUp({email,password}):await db.auth.signInWithPassword({email,password});
+  const result=await db.auth.signInWithPassword({email,password});
   if(result.error)throw result.error;
-  if(mode==="signup"&&!result.data.session){$("authMessage").textContent="Account created. Check your email to confirm, then sign in.";return}
   currentUser=result.data.user;showApp();await loadData();
  }catch(err){$("authMessage").textContent=err.message||"Unable to sign in."}
  finally{$("authSubmit").disabled=false}
 }
 $("authForm").addEventListener("submit",handleAuth);
-$("authToggle").addEventListener("click",()=>{const signup=$("authMode").value!=="signup";$("authMode").value=signup?"signup":"signin";$("authTitle").textContent=signup?"Create administrator account":"Administrator sign in";$("authSubmit").textContent=signup?"Create account":"Sign in";$("authToggle").textContent=signup?"Already have an account? Sign in":"Need an account? Create one";$("authMessage").textContent=""});
 document.addEventListener("click",async e=>{
  const nav=e.target.closest("[data-page]");if(nav)showPage(nav.dataset.page);
  const go=e.target.closest("[data-go]");if(go)showPage(go.dataset.go);
@@ -90,7 +88,8 @@ document.addEventListener("click",async e=>{
 });
 $("studentForm").addEventListener("submit",async e=>{
  e.preventDefault();const oldId=$("editStudentId").value;
- const record={student_number:$("studentId").value.trim(),full_name:$("studentName").value.trim(),email:$("studentEmail").value.trim(),phone:$("studentPhone").value.trim(),course_id:$("studentCourse").value||null,is_active:true};
+ const existing=oldId?students.find(s=>s.id===oldId):null;
+ const record={student_number:$("studentId").value.trim(),full_name:$("studentName").value.trim(),email:$("studentEmail").value.trim(),phone:$("studentPhone").value.trim(),course_id:$("studentCourse").value||null,is_active:existing?existing.active:true};
  const result=oldId?await db.from("students").update(record).eq("id",oldId):await db.from("students").insert(record);
  if(result.error)return toast(result.error.message);
  closeModal();await loadData();toast(oldId?"Student updated.":"Student added successfully.");
