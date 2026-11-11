@@ -35,7 +35,7 @@ async function loadData(){
   const refreshed=await db.from("courses").select("*").eq("user_id",currentUser.id).order("name");if(refreshed.error)throw refreshed.error;courses=refreshed.data||[];
  }
  render();
- if(typeof loadAcademicModules==="function") await loadAcademicModules();
+ if(typeof window.loadAcademicModules==="function") await window.loadAcademicModules();
 }
 function studentMarkup(s){return `<div class="student-cell"><span class="mini-avatar">${initials(s.name)}</span><span><b>${escapeHTML(s.name)}</b><small>${escapeHTML(s.email)}</small></span></div>`}
 function renderDashboard(){
