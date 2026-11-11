@@ -35,8 +35,8 @@
   let activeType = "";
   let editingId = "";
   const escape = value => String(value ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-  const courseLabel = id => (window.courses || []).find(x=>x.id===id)?.name || "—";
-  const studentLabel = id => (window.students || []).find(x=>x.id===id)?.name || "—";
+  const courseLabel = id => courses.find(x=>x.id===id)?.name || "—";
+  const studentLabel = id => students.find(x=>x.id===id)?.name || "—";
   const subjectLabel = id => state.subjects.find(x=>x.id===id)?.name || "—";
   const teacherLabel = id => state.teachers.find(x=>x.id===id)?.full_name || "—";
   const examLabel = id => state.exams.find(x=>x.id===id)?.title || "—";
