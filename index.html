@@ -92,6 +92,17 @@
         <label>Subject / Course<select id="studentCourse" required></select></label>
         <label>Phone number<input id="studentPhone" type="tel" placeholder="03XX-XXXXXXX"></label>
         <label class="full-field">Gmail address<input id="studentEmail" type="email" required placeholder="student@gmail.com"></label>
+        <div class="form-section-title">Personal information</div>
+        <label>Date of birth<input id="dateOfBirth" type="date"></label>
+        <label>Gender<select id="gender"><option value="">Select gender</option><option>Female</option><option>Male</option><option>Other</option></select></label>
+        <label class="full-field">Home address<input id="studentAddress" maxlength="250" placeholder="Student home address"></label>
+        <label>Admission date<input id="admissionDate" type="date"></label>
+        <div class="form-section-title">Parent / guardian information</div>
+        <label>Father name<input id="fatherName" maxlength="120" placeholder="Father full name"></label>
+        <label>Father CNIC<input id="fatherCnic" maxlength="20" placeholder="XXXXX-XXXXXXX-X"></label>
+        <label>Mother name<input id="motherName" maxlength="120" placeholder="Mother full name"></label>
+        <label>Mother CNIC<input id="motherCnic" maxlength="20" placeholder="XXXXX-XXXXXXX-X"></label>
+        <label class="full-field">Parent / guardian phone<input id="guardianPhone" type="tel" maxlength="30" placeholder="03XX-XXXXXXX"></label>
       </div><div class="modal-actions"><button type="button" class="secondary-btn" id="cancelModal">Cancel</button><button type="submit" class="primary-btn" id="saveStudentBtn">Save student</button></div></form>
     </section>
   </div>
