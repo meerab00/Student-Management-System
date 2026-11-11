@@ -35,6 +35,7 @@ async function loadData(){
   const refreshed=await db.from("courses").select("*").eq("user_id",currentUser.id).order("name");if(refreshed.error)throw refreshed.error;courses=refreshed.data||[];
  }
  render();
+ if(typeof loadAcademicModules==="function") await loadAcademicModules();
 }
 function studentMarkup(s){return `<div class="student-cell"><span class="mini-avatar">${initials(s.name)}</span><span><b>${escapeHTML(s.name)}</b><small>${escapeHTML(s.email)}</small></span></div>`}
 function renderDashboard(){
@@ -93,12 +94,12 @@ function exportAttendance(){
 }
 function showPage(page){document.querySelectorAll(".page-view").forEach(v=>v.classList.remove("active"));$(page+"Page").classList.add("active");document.querySelectorAll(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.page===page));$("pageCrumb").textContent=page[0].toUpperCase()+page.slice(1);$("sidebar").classList.remove("open");render()}
 function openStudentModal(student=null){
- $("studentForm").reset();$("editStudentId").value=student?.id||"";$("modalTitle").textContent=student?"Edit student":"Add student";$("studentId").disabled=false;
+ $("studentForm").reset();$("editStudentId").value=student?.id||"";$("modalTitle").textContent=student?"Edit student":"Add student";const nextNumber=Math.max(0,...students.map(s=>Number((s.studentNumber||"").match(/(\\d+)$/)?.[1]||0)))+1;$("studentId").value=student?student.studentNumber:"STU-"+new Date().getFullYear()+"-"+String(nextNumber).padStart(4,"0");$("studentId").readOnly=true;
  $("studentCourse").innerHTML=courses.map(c=>`<option value="${c.id}">${escapeHTML(c.name)}</option>`).join("");
  if(student){$("studentName").value=student.name;$("studentId").value=student.studentNumber;$("studentEmail").value=student.email;$("studentPhone").value=student.phone||"";$("studentCourse").value=student.courseId||"";$("fatherName").value=student.fatherName||"";$("fatherCnic").value=student.fatherCnic||"";$("motherName").value=student.motherName||"";$("motherCnic").value=student.motherCnic||"";$("guardianPhone").value=student.guardianPhone||"";$("dateOfBirth").value=student.dateOfBirth||"";$("gender").value=student.gender||"";$("studentAddress").value=student.address||"";$("admissionDate").value=student.admissionDate||"";}
  $("modalBackdrop").classList.add("open");
 }
-function closeModal(){$("modalBackdrop").classList.remove("open");$("studentId").disabled=false}
+function closeModal(){$("modalBackdrop").classList.remove("open");$("studentId").readOnly=true}
 function showStudentDetails(student){
  const fields=[["Student name",student.name],["Student ID",student.studentNumber],["Date of birth",student.dateOfBirth],["Gender",student.gender],["Subject / Course",courseName(student.courseId)],["Phone number",student.phone],["Gmail address",student.email],["Father name",student.fatherName],["Father CNIC",student.fatherCnic],["Mother name",student.motherName],["Mother CNIC",student.motherCnic],["Parent / guardian phone",student.guardianPhone],["Address",student.address],["Admission date",student.admissionDate]];
  $("studentDetailsTitle").textContent=student.name+" — Student details";
@@ -159,6 +160,7 @@ $("studentForm").addEventListener("submit",async e=>{
   is_active:existing?existing.active:true
  };
  try{
+  if(oldId)delete record.student_number;
   const result=oldId?await db.from("students").update(record).eq("id",oldId).eq("user_id",currentUser.id):await db.from("students").insert(record);
   if(result.error)throw result.error;
   closeModal();await loadData();toast(oldId?"Student updated.":"Student added successfully.");
