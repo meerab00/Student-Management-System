@@ -61,7 +61,7 @@ function renderStudents(){
  $("studentsTable").innerHTML=filtered.map(s=>`<tr><td>${studentMarkup(s)}</td><td>${escapeHTML(s.studentNumber)}</td><td>${escapeHTML(s.email)}</td><td>${escapeHTML(courseName(s.courseId))}</td><td><span class="pill ${s.active?"":"inactive"}">${s.active?"Active":"Inactive"}</span></td><td><button class="action-btn" data-view-student="${s.id}">View</button><button class="action-btn" data-edit="${s.id}">Edit</button><button class="action-btn delete" data-delete="${s.id}">Delete</button></td></tr>`).join("")||'<tr><td colspan="6" class="empty-state">No matching students found.</td></tr>';
 }
 function renderCourses(){
- $("courseGrid").innerHTML=courses.map((c,i)=>'<article class="course-card"><div class="course-symbol">'+["∑","⌘","文","▥","✦"][i%5]+'</div><h3>'+escapeHTML(c.name)+'</h3><p>'+escapeHTML(c.description||"No description added")+'</p><div class="course-meta"><span>'+escapeHTML(c.code)+'</span><span>'+students.filter(s=>s.courseId===c.id).length+' students</span><span>'+escapeHTML(c.duration||"—")+'</span></div><div class="course-actions"><button class="action-btn" data-edit-course="'+c.id+'">Edit</button><button class="action-btn delete" data-delete-course="'+c.id+'">Delete</button></div></article>').join("")||'<div class="empty-state">No courses added yet.</div>';
+ $("courseGrid").innerHTML=courses.map((c,i)=>'<article class="course-card"><div class="course-symbol">'+["∑","⌘","文","▥","✦"][i%5]+'</div><h3>'+escapeHTML(c.name)+'</h3><p>'+escapeHTML(c.description||"No description added")+'</p><div class="course-meta"><span>'+escapeHTML(c.code)+'</span><span>'+students.filter(s=>s.courseId===c.id).length+' students</span><span>'+(window.getCourseSubjectCount?window.getCourseSubjectCount(c.id):0)+' subjects</span><span>'+escapeHTML(c.duration||"—")+'</span></div><div class="course-actions"><button class="action-btn" data-edit-course="'+c.id+'">Edit</button><button class="action-btn delete" data-delete-course="'+c.id+'">Delete</button></div></article>').join("")||'<div class="empty-state">No courses added yet.</div>';
 }
 function openCourseModal(course=null){
  $("courseForm").reset();$("editCourseId").value=course?course.id:"";
@@ -130,6 +130,7 @@ document.addEventListener("click",async e=>{
  if(action?.dataset.action==="add-course"){
   openCourseModal();
  }
+ if(action?.dataset.action==="view-course-subjects"){showPage("subjects");}
  const edit=e.target.closest("[data-edit]");if(edit){const s=students.find(x=>x.id===edit.dataset.edit);if(s)openStudentModal(s)}
  const viewStudent=e.target.closest("[data-view-student]");if(viewStudent){const s=students.find(x=>x.id===viewStudent.dataset.viewStudent);if(s)showStudentDetails(s)}
  const editCourse=e.target.closest("[data-edit-course]");if(editCourse){const course=courses.find(x=>x.id===editCourse.dataset.editCourse);if(course)openCourseModal(course)}
