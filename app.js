@@ -46,12 +46,16 @@ function renderStudents(){
  $("studentsTable").innerHTML=filtered.map(s=>`<tr><td>${studentMarkup(s)}</td><td>${escapeHTML(s.studentNumber)}</td><td>${escapeHTML(s.email)}</td><td>${escapeHTML(courseName(s.courseId))}</td><td><span class="pill ${s.active?"":"inactive"}">${s.active?"Active":"Inactive"}</span></td><td><button class="action-btn" data-edit="${s.id}">Edit</button><button class="action-btn delete" data-delete="${s.id}">Delete</button></td></tr>`).join("")||'<tr><td colspan="6" class="empty-state">No matching students found.</td></tr>';
 }
 function renderCourses(){
- $("courseGrid").innerHTML=courses.map((c,i)=>`<article class="course-card"><div class="course-symbol">${["∑","⌘","文","▥","✦"][i%5]}</div><h3>${escapeHTML(c.name)}</h3><p>${escapeHTML(c.description)}</p><div class="course-meta"><span>${escapeHTML(c.code)}</span><span>${students.filter(s=>s.courseId===c.id).length} students</span><span>${escapeHTML(c.duration)}</span></div></article>`).join("")||'<div class="empty-state">No courses added yet.</div>';
+ $("courseGrid").innerHTML=courses.map((c,i)=>'<article class="course-card"><div class="course-symbol">'+["∑","⌘","文","▥","✦"][i%5]+'</div><h3>'+escapeHTML(c.name)+'</h3><p>'+escapeHTML(c.description||"No description added")+'</p><div class="course-meta"><span>'+escapeHTML(c.code)+'</span><span>'+students.filter(s=>s.courseId===c.id).length+' students</span><span>'+escapeHTML(c.duration||"—")+'</span></div><div class="course-actions"><button class="action-btn" data-edit-course="'+c.id+'">Edit</button><button class="action-btn delete" data-delete-course="'+c.id+'">Delete</button></div></article>').join("")||'<div class="empty-state">No courses added yet.</div>';
 }
-function renderAttendance(){
- const date=$("attendanceDate").value||today();const records=attendance[date]||{};
- $("attendanceTable").innerHTML=students.filter(s=>s.active).map(s=>`<tr><td>${studentMarkup(s)}</td><td>${escapeHTML(s.studentNumber)}</td><td>${escapeHTML(courseName(s.courseId))}</td><td><select class="attendance-select" data-attendance="${s.id}"><option value="" ${!records[s.id]?"selected":""}>Select status</option><option value="Present" ${records[s.id]==="Present"?"selected":""}>Present</option><option value="Absent" ${records[s.id]==="Absent"?"selected":""}>Absent</option><option value="Late" ${records[s.id]==="Late"?"selected":""}>Late</option></select></td></tr>`).join("")||'<tr><td colspan="4" class="empty-state">Add active students before taking attendance.</td></tr>';
+function openCourseModal(course=null){
+ $("courseForm").reset();$("editCourseId").value=course?course.id:"";
+ $("courseModalTitle").textContent=course?"Edit course":"Add course";
+ $("courseName").value=course?course.name:"";$("courseCode").value=course?course.code:"";
+ $("courseDescription").value=course?(course.description||""):"";$("courseDuration").value=course?(course.duration||"4 years"):"4 years";
+ $("courseModalBackdrop").classList.add("open");$("courseName").focus();
 }
+function closeCourseModal(){$("courseModalBackdrop").classList.remove("open")}
 function render(){renderDashboard();renderStudents();renderCourses();renderAttendance()}
 function csvCell(value){return '"'+String(value??"").replace(/"/g,'""')+'"'}
 function downloadCSV(filename,headers,rows){
@@ -93,12 +97,11 @@ document.addEventListener("click",async e=>{
  const action=e.target.closest("[data-action]");
  if(action?.dataset.action==="add-student")openStudentModal();
  if(action?.dataset.action==="add-course"){
-  const name=prompt("Enter course name:");if(!name?.trim())return;
-  const code=prompt("Enter course code:")||"NEW-001";
-  const {error}=await db.from("courses").insert({name:name.trim(),code:code.trim(),description:"Newly added course",duration:"4 years"});
-  if(error)return toast(error.message);await loadData();toast("Course added successfully.");
+  openCourseModal();
  }
  const edit=e.target.closest("[data-edit]");if(edit){const s=students.find(x=>x.id===edit.dataset.edit);if(s)openStudentModal(s)}
+ const editCourse=e.target.closest("[data-edit-course]");if(editCourse){const course=courses.find(x=>x.id===editCourse.dataset.editCourse);if(course)openCourseModal(course)}
+ const deleteCourse=e.target.closest("[data-delete-course]");if(deleteCourse){const course=courses.find(x=>x.id===deleteCourse.dataset.deleteCourse);if(course&&confirm("Delete "+course.name+"? Existing students will remain, but their course assignment will be cleared.")){const result=await db.from("courses").delete().eq("id",course.id);if(result.error)return toast(result.error.message);await loadData();toast("Course deleted.")}}
  const del=e.target.closest("[data-delete]");if(del){const s=students.find(x=>x.id===del.dataset.delete);if(s&&confirm("Delete "+s.name+"? This cannot be undone.")){const {error}=await db.from("students").delete().eq("id",s.id);if(error)return toast(error.message);await loadData();toast("Student deleted.")}}
 });
 $("studentForm").addEventListener("submit",async e=>{
@@ -110,6 +113,8 @@ $("studentForm").addEventListener("submit",async e=>{
  closeModal();await loadData();toast(oldId?"Student updated.":"Student added successfully.");
 });
 $("closeModal").addEventListener("click",closeModal);$("cancelModal").addEventListener("click",closeModal);$("modalBackdrop").addEventListener("click",e=>{if(e.target===$("modalBackdrop"))closeModal()});
+$("courseForm").addEventListener("submit",async e=>{e.preventDefault();const id=$("editCourseId").value;const record={name:$("courseName").value.trim(),code:$("courseCode").value.trim().toUpperCase(),description:$("courseDescription").value.trim(),duration:$("courseDuration").value.trim()};if(!record.name||!record.code)return toast("Course name and code are required.");const result=id?await db.from("courses").update(record).eq("id",id):await db.from("courses").insert(record);if(result.error)return toast(result.error.code==="23505"?"A course with this name or code already exists.":result.error.message);closeCourseModal();await loadData();toast(id?"Course updated.":"Course added successfully.");});
+$("closeCourseModal").addEventListener("click",closeCourseModal);$("cancelCourseModal").addEventListener("click",closeCourseModal);$("courseModalBackdrop").addEventListener("click",e=>{if(e.target===$("courseModalBackdrop"))closeCourseModal()});
 $("studentSearch").addEventListener("input",renderStudents);$("attendanceDate").addEventListener("change",renderAttendance);$("exportStudents").addEventListener("click",exportStudents);$("exportAttendance").addEventListener("click",exportAttendance);
 $("saveAttendance").addEventListener("click",async()=>{
  const date=$("attendanceDate").value||today();const controls=[...document.querySelectorAll("[data-attendance]")];
