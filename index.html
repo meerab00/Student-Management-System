@@ -36,7 +36,7 @@
         <button class="nav-link" data-page="attendance"><span>✓</span> Attendance</button>
       </nav>
       <div class="sidebar-bottom">
-        <div class="help-card"><div class="help-icon">✦</div><strong>Stay organized</strong><p>Manage your campus records in one place.</p></div>
+        <div class="help-card"><div class="help-icon">✦</div><strong id="institutionNameLabel">Your institution</strong><p>Manage your campus records in one place.</p><button class="text-button" id="institutionSettingsBtn" type="button">Institution settings →</button></div>
         <div class="profile"><div class="avatar">AD</div><div><strong>Administrator</strong><small id="profileEmail">Administrator</small></div><button id="logoutBtn" title="Sign out">↗</button></div>
       </div>
     </aside>
@@ -94,6 +94,7 @@
     </section>
   </div>
   <div class="modal-backdrop" id="courseModalBackdrop"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="courseModalTitle"><div class="modal-head"><div><div class="eyebrow">ACADEMIC SETUP</div><h2 id="courseModalTitle">Add course</h2></div><button class="icon-btn" id="closeCourseModal" aria-label="Close">×</button></div><form id="courseForm"><input type="hidden" id="editCourseId"><div class="form-grid"><label>Course name<input id="courseName" required maxlength="100" placeholder="e.g. BS Mathematics"></label><label>Course code<input id="courseCode" required maxlength="20" placeholder="e.g. MTH-101"></label><label class="full-field">Description<input id="courseDescription" maxlength="180" placeholder="Short course description"></label><label class="full-field">Duration<input id="courseDuration" maxlength="40" placeholder="e.g. 4 years"></label></div><div class="modal-actions"><button type="button" class="secondary-btn" id="cancelCourseModal">Cancel</button><button type="submit" class="primary-btn">Save course</button></div></form></section></div>
+  <div class="modal-backdrop" id="institutionModalBackdrop"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="institutionModalTitle"><div class="modal-head"><div><div class="eyebrow">WORKSPACE PROFILE</div><h2 id="institutionModalTitle">Institution settings</h2></div><button class="icon-btn" id="closeInstitutionModal" aria-label="Close">×</button></div><form id="institutionForm"><div class="form-grid"><label class="full-field">School / academy / college name<input id="institutionNameInput" required maxlength="120" placeholder="e.g. City Science Academy"></label></div><div class="modal-actions"><button type="button" class="secondary-btn" id="cancelInstitutionModal">Cancel</button><button type="submit" class="primary-btn" id="saveInstitutionBtn">Save settings</button></div></form></section></div>
   <div class="toast" id="toast" role="status"></div>
 </body>
 </html>
