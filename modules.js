@@ -5,7 +5,8 @@
   const configs = {
     subjects:{title:"Subject",table:"subjects",fields:[
       {key:"name",label:"Subject name",required:true},{key:"code",label:"Subject code",required:true},
-      {key:"course_id",label:"Course",type:"select",source:"courses",required:true}]},
+      {key:"course_id",label:"Course",type:"select",source:"courses",required:true},
+      {key:"semester",label:"Semester",type:"select",options:[["1","Semester 1"],["2","Semester 2"],["3","Semester 3"],["4","Semester 4"],["5","Semester 5"],["6","Semester 6"],["7","Semester 7"],["8","Semester 8"]]}]},
     enrollments:{title:"Enrollment",table:"enrollments",fields:[
       {key:"student_id",label:"Student",type:"select",source:"students",required:true},
       {key:"course_id",label:"Course",type:"select",source:"courses",required:true},
@@ -53,7 +54,8 @@
     renderModules();
   }
   function renderModules(){
-    $m("subjectsTable").innerHTML = state.subjects.map(x=>`<tr><td>${escape(x.name)}</td><td>${escape(x.code)}</td><td>${escape(courseLabel(x.course_id))}</td><td><button class="action-btn" data-module-edit="subjects" data-id="${x.id}">Edit</button><button class="action-btn delete" data-module-delete="subjects" data-id="${x.id}">Delete</button></td></tr>`).join("") || '<tr><td colspan="4" class="empty-state">No subjects yet.</td></tr>';
+    window.getCourseSubjectCount = courseId => state.subjects.filter(x=>x.course_id===courseId).length;
+    $m("subjectsTable").innerHTML = state.subjects.slice().sort((a,b)=>(a.semester||99)-(b.semester||99)||a.name.localeCompare(b.name)).map(x=>`<tr><td>${escape(x.name)}</td><td>${escape(x.code)}</td><td>${x.semester?`Semester ${escape(x.semester)}`:"—"}</td><td>${escape(courseLabel(x.course_id))}</td><td><button class="action-btn" data-module-edit="subjects" data-id="${x.id}">Edit</button><button class="action-btn delete" data-module-delete="subjects" data-id="${x.id}">Delete</button></td></tr>`).join("") || '<tr><td colspan="4" class="empty-state">No subjects yet.</td></tr>';
     $m("enrollmentsTable").innerHTML = state.enrollments.map(x=>{const student=students.find(s=>s.id===x.student_id);return "<tr><td>"+escape(student?.name||"—")+"</td><td>"+escape(student?.studentNumber||"—")+"</td><td>"+escape(courseLabel(x.course_id))+"</td><td>"+escape(x.enrolled_on||"—")+"</td><td>"+escape(x.status)+"</td><td><button class=\"action-btn\" data-module-edit=\"enrollments\" data-id=\""+x.id+"\">Edit</button><button class=\"action-btn delete\" data-module-delete=\"enrollments\" data-id=\""+x.id+"\">Delete</button></td></tr>"}).join("") || "<tr><td colspan=\"6\" class=\"empty-state\">No enrollments yet.</td></tr>";
     $m("teachersTable").innerHTML = state.teachers.map(x=>`<tr><td><b>${escape(x.full_name)}</b></td><td>${escape(x.email)}</td><td>${escape(x.phone)}</td><td>${escape(x.specialization)}</td><td><button class="action-btn" data-module-edit="teachers" data-id="${x.id}">Edit</button><button class="action-btn delete" data-module-delete="teachers" data-id="${x.id}">Delete</button></td></tr>`).join("") || '<tr><td colspan="5" class="empty-state">No teachers yet.</td></tr>';
     $m("examsTable").innerHTML = state.exams.map(x=>`<tr><td>${escape(x.title)}</td><td>${escape(courseLabel(x.course_id))}</td><td>${escape(subjectLabel(x.subject_id))}</td><td>${escape(x.exam_date||"—")}</td><td>${escape(x.total_marks)}</td><td><button class="action-btn" data-module-edit="exams" data-id="${x.id}">Edit</button><button class="action-btn delete" data-module-delete="exams" data-id="${x.id}">Delete</button></td></tr>`).join("") || '<tr><td colspan="6" class="empty-state">No exams scheduled yet.</td></tr>';
