@@ -38,10 +38,18 @@ async function loadData(){
 }
 function studentMarkup(s){return `<div class="student-cell"><span class="mini-avatar">${initials(s.name)}</span><span><b>${escapeHTML(s.name)}</b><small>${escapeHTML(s.email)}</small></span></div>`}
 function renderDashboard(){
- $("statStudents").textContent=students.length;$("statCourses").textContent=courses.length;
- const records=attendance[$("attendanceDate").value||today()]||{};const marked=Object.values(records).filter(v=>["Present","Absent","Late"].includes(v)).length;const present=Object.values(records).filter(v=>v==="Present").length;
- $("statPresent").textContent=present;$("statRate").textContent=marked?Math.round(present/marked*100)+"%":"0%";
+ const active=students.filter(s=>s.active).length,inactive=students.length-active;
+ const records=attendance[today()]||{};
+ const values=Object.values(records);
+ const present=values.filter(v=>v==="Present").length,absent=values.filter(v=>v==="Absent").length,late=values.filter(v=>v==="Late").length;
+ const marked=present+absent+late,unmarked=Math.max(0,active-marked),rate=marked?Math.round(present/marked*100):0;
+ $("statStudents").textContent=students.length;$("statActive").textContent=active;$("statInactiveNote").textContent=inactive+" inactive";
+ $("statCourses").textContent=courses.length;$("statPresent").textContent=present;$("statRate").textContent=rate+"%";
+ $("statAttendanceNote").textContent=marked+" of "+active+" marked today";
+ $("dashPresent").textContent=present;$("dashAbsent").textContent=absent;$("dashLate").textContent=late;$("dashUnmarked").textContent=unmarked;
+ $("attendanceRing").style.background="conic-gradient(#239b72 0 "+(active?present/active*100:0)+"%,#e9edf5 "+(active?present/active*100:0)+"% 100%)";
  $("recentStudents").innerHTML=students.slice(0,5).map(s=>`<tr><td>${studentMarkup(s)}</td><td>${escapeHTML(s.studentNumber)}</td><td>${escapeHTML(courseName(s.courseId))}</td><td><span class="pill ${s.active?"":"inactive"}">${s.active?"Active":"Inactive"}</span></td></tr>`).join("")||'<tr><td colspan="4" class="empty-state">No students yet.</td></tr>';
+ $("courseDistribution").innerHTML=courses.map(c=>{const count=students.filter(s=>s.courseId===c.id).length;const width=students.length?Math.round(count/students.length*100):0;return `<div class="course-bar-row"><div class="course-bar-label"><span>${escapeHTML(c.name)}</span><b>${count}</b></div><div class="course-bar-track"><i style="width:${width}%"></i></div></div>`}).join("")||'<p class="empty-state">Add courses to see enrolment distribution.</p>';
 }
 function populateCourseFilters(){
  for(const id of ["studentCourseFilter","attendanceCourseFilter"]){const el=$(id),selected=el.value||"all";el.innerHTML='<option value="all">All courses</option>'+courses.map(c=>`<option value="${c.id}">${escapeHTML(c.name)}</option>`).join("");el.value=courses.some(c=>c.id===selected)?selected:"all";}
