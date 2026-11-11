@@ -77,3 +77,17 @@ create index if not exists attendance_user_date_idx on public.attendance(user_id
 -- The browser app uses the authenticated role only. Keep unauthenticated access closed.
 revoke all on table public.courses, public.students, public.attendance from anon;
 grant select, insert, update, delete on table public.courses, public.students, public.attendance to authenticated;
+
+
+-- Per-institution workspace profile. Each administrator owns one private profile.
+create table if not exists public.institution_profiles (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  institution_name text not null default 'Your institution' check (char_length(trim(institution_name)) between 1 and 120),
+  updated_at timestamptz not null default now()
+);
+alter table public.institution_profiles enable row level security;
+drop policy if exists "Users manage own institution profile" on public.institution_profiles;
+create policy "Users manage own institution profile" on public.institution_profiles for all to authenticated
+using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()));
+revoke all on table public.institution_profiles from anon;
+grant select, insert, update, delete on table public.institution_profiles to authenticated;
