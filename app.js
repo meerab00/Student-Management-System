@@ -22,7 +22,7 @@ async function loadData(){
  ]);
  for(const r of [c,s,a]) if(r.error) throw r.error;
  const profile=await db.from("institution_profiles").select("institution_name").eq("user_id",currentUser.id).maybeSingle();if(profile.error)throw profile.error;if(!profile.data){const created=await db.from("institution_profiles").insert({institution_name:"Your institution"});if(created.error)throw created.error;setInstitutionName("Your institution");}else setInstitutionName(profile.data.institution_name);
- courses=c.data||[]; students=(s.data||[]).map(x=>({...x,id:x.id,studentNumber:x.student_number,name:x.full_name,email:x.email,phone:x.phone,courseId:x.course_id,active:x.is_active}));
+ courses=c.data||[]; students=(s.data||[]).map(x=>({...x,id:x.id,studentNumber:x.student_number,name:x.full_name,email:x.email,phone:x.phone,courseId:x.course_id,active:x.is_active,fatherName:x.father_name||"",fatherCnic:x.father_cnic||"",motherName:x.mother_name||"",motherCnic:x.mother_cnic||"",guardianPhone:x.guardian_phone||"",dateOfBirth:x.date_of_birth||"",gender:x.gender||"",address:x.address||"",admissionDate:x.admission_date||""}));
  attendance={};(a.data||[]).forEach(x=>{attendance[x.attendance_date] ||= {};attendance[x.attendance_date][x.student_id]=x.status});
  if(!courses.length){
   const defaults=[
@@ -49,7 +49,7 @@ function populateCourseFilters(){
 function renderStudents(){
  const q=($("studentSearch").value||"").toLowerCase();const courseFilter=$("studentCourseFilter").value||"all";const filtered=students.filter(s=>(courseFilter==="all"||s.courseId===courseFilter)&&[s.name,s.studentNumber,s.email,courseName(s.courseId)].join(" ").toLowerCase().includes(q));
  $("studentCount").textContent=filtered.length+" student"+(filtered.length===1?"":"s");
- $("studentsTable").innerHTML=filtered.map(s=>`<tr><td>${studentMarkup(s)}</td><td>${escapeHTML(s.studentNumber)}</td><td>${escapeHTML(s.email)}</td><td>${escapeHTML(courseName(s.courseId))}</td><td><span class="pill ${s.active?"":"inactive"}">${s.active?"Active":"Inactive"}</span></td><td><button class="action-btn" data-edit="${s.id}">Edit</button><button class="action-btn delete" data-delete="${s.id}">Delete</button></td></tr>`).join("")||'<tr><td colspan="6" class="empty-state">No matching students found.</td></tr>';
+ $("studentsTable").innerHTML=filtered.map(s=>`<tr><td>${studentMarkup(s)}</td><td>${escapeHTML(s.studentNumber)}</td><td>${escapeHTML(s.email)}</td><td>${escapeHTML(courseName(s.courseId))}</td><td><span class="pill ${s.active?"":"inactive"}">${s.active?"Active":"Inactive"}</span></td><td><button class="action-btn" data-view-student="${s.id}">View</button><button class="action-btn" data-edit="${s.id}">Edit</button><button class="action-btn delete" data-delete="${s.id}">Delete</button></td></tr>`).join("")||'<tr><td colspan="6" class="empty-state">No matching students found.</td></tr>';
 }
 function renderCourses(){
  $("courseGrid").innerHTML=courses.map((c,i)=>'<article class="course-card"><div class="course-symbol">'+["∑","⌘","文","▥","✦"][i%5]+'</div><h3>'+escapeHTML(c.name)+'</h3><p>'+escapeHTML(c.description||"No description added")+'</p><div class="course-meta"><span>'+escapeHTML(c.code)+'</span><span>'+students.filter(s=>s.courseId===c.id).length+' students</span><span>'+escapeHTML(c.duration||"—")+'</span></div><div class="course-actions"><button class="action-btn" data-edit-course="'+c.id+'">Edit</button><button class="action-btn delete" data-delete-course="'+c.id+'">Delete</button></div></article>').join("")||'<div class="empty-state">No courses added yet.</div>';
@@ -75,7 +75,7 @@ function downloadCSV(filename,headers,rows){
 }
 function exportStudents(){
  const courseFilter=$("studentCourseFilter").value||"all";const list=students.filter(s=>courseFilter==="all"||s.courseId===courseFilter);
- downloadCSV("campusdesk-students-"+today()+".csv",["Student ID","Full name","Email","Phone","Course","Status"],list.map(s=>[s.studentNumber,s.name,s.email,s.phone,courseName(s.courseId),s.active?"Active":"Inactive"]));
+ downloadCSV("campusdesk-students-"+today()+".csv",["Student ID","Full name","Date of birth","Gender","Email","Student phone","Father name","Father CNIC","Mother name","Mother CNIC","Guardian phone","Address","Course","Admission date","Status"],list.map(s=>[s.studentNumber,s.name,s.dateOfBirth,s.gender,s.email,s.phone,s.fatherName,s.fatherCnic,s.motherName,s.motherCnic,s.guardianPhone,s.address,courseName(s.courseId),s.admissionDate,s.active?"Active":"Inactive"]));
  toast("Student list exported.");
 }
 function exportAttendance(){
@@ -87,10 +87,12 @@ function showPage(page){document.querySelectorAll(".page-view").forEach(v=>v.cla
 function openStudentModal(student=null){
  $("studentForm").reset();$("editStudentId").value=student?.id||"";$("modalTitle").textContent=student?"Edit student":"Add student";$("studentId").disabled=false;
  $("studentCourse").innerHTML=courses.map(c=>`<option value="${c.id}">${escapeHTML(c.name)}</option>`).join("");
- if(student){$("studentName").value=student.name;$("studentId").value=student.studentNumber;$("studentEmail").value=student.email;$("studentPhone").value=student.phone||"";$("studentCourse").value=student.courseId||""}
+ if(student){$("studentName").value=student.name;$("studentId").value=student.studentNumber;$("studentEmail").value=student.email;$("studentPhone").value=student.phone||"";$("studentCourse").value=student.courseId||"";$("studentDob").value=student.dateOfBirth;$("studentGender").value=student.gender;$("fatherName").value=student.fatherName;$("fatherCnic").value=student.fatherCnic;$("motherName").value=student.motherName;$("motherCnic").value=student.motherCnic;$("guardianPhone").value=student.guardianPhone;$("studentAddress").value=student.address;$("admissionDate").value=student.admissionDate}else{$("admissionDate").value=today()}
  $("modalBackdrop").classList.add("open");
 }
 function closeModal(){$("modalBackdrop").classList.remove("open");$("studentId").disabled=false}
+function showStudentDetails(student){const fields=[["Student name",student.name],["Student ID",student.studentNumber],["Date of birth",student.dateOfBirth],["Gender",student.gender],["Email",student.email],["Student phone",student.phone],["Course / Subject",courseName(student.courseId)],["Father's name",student.fatherName],["Father's CNIC",student.fatherCnic],["Mother's name",student.motherName],["Mother's CNIC",student.motherCnic],["Parent / guardian phone",student.guardianPhone],["Home address",student.address],["Admission date",student.admissionDate],["Status",student.active?"Active":"Inactive"]];$("studentDetailsTitle").textContent=student.name+" — Admission file";$("studentDetailsContent").innerHTML=fields.map(([label,value])=>'<div class="detail-item"><small>'+escapeHTML(label)+'</small><strong>'+escapeHTML(value||"Not provided")+'</strong></div>').join("");$("studentDetailsBackdrop").classList.add("open")}
+function closeStudentDetails(){$("studentDetailsBackdrop").classList.remove("open")}
 async function handleAuth(e){
  e.preventDefault();const email=$("authEmail").value.trim(),password=$("authPassword").value;
  $("authSubmit").disabled=true;$("authMessage").textContent="Please wait…";
@@ -115,6 +117,7 @@ document.addEventListener("click",async e=>{
   openCourseModal();
  }
  const edit=e.target.closest("[data-edit]");if(edit){const s=students.find(x=>x.id===edit.dataset.edit);if(s)openStudentModal(s)}
+ const viewStudent=e.target.closest("[data-view-student]");if(viewStudent){const s=students.find(x=>x.id===viewStudent.dataset.viewStudent);if(s)showStudentDetails(s)}
  const editCourse=e.target.closest("[data-edit-course]");if(editCourse){const course=courses.find(x=>x.id===editCourse.dataset.editCourse);if(course)openCourseModal(course)}
  const deleteCourse=e.target.closest("[data-delete-course]");if(deleteCourse){const course=courses.find(x=>x.id===deleteCourse.dataset.deleteCourse);if(course&&confirm("Delete "+course.name+"? Existing students will remain, but their course assignment will be cleared.")){const result=await db.from("courses").delete().eq("id",course.id);if(result.error)return toast(result.error.message);await loadData();toast("Course deleted.")}}
  const del=e.target.closest("[data-delete]");if(del){const s=students.find(x=>x.id===del.dataset.delete);if(s&&confirm("Delete "+s.name+"? This cannot be undone.")){const {error}=await db.from("students").delete().eq("id",s.id);if(error)return toast(error.message);await loadData();toast("Student deleted.")}}
@@ -122,11 +125,12 @@ document.addEventListener("click",async e=>{
 $("studentForm").addEventListener("submit",async e=>{
  e.preventDefault();const oldId=$("editStudentId").value;
  const existing=oldId?students.find(s=>s.id===oldId):null;
- const record={student_number:$("studentId").value.trim(),full_name:$("studentName").value.trim(),email:$("studentEmail").value.trim(),phone:$("studentPhone").value.trim(),course_id:$("studentCourse").value||null,is_active:existing?existing.active:true};
+ const record={student_number:$("studentId").value.trim(),full_name:$("studentName").value.trim(),email:$("studentEmail").value.trim(),phone:$("studentPhone").value.trim(),course_id:$("studentCourse").value||null,is_active:existing?existing.active:true,father_name:$("fatherName").value.trim(),father_cnic:$("fatherCnic").value.trim(),mother_name:$("motherName").value.trim(),mother_cnic:$("motherCnic").value.trim(),guardian_phone:$("guardianPhone").value.trim(),date_of_birth:$("studentDob").value||null,gender:$("studentGender").value||null,address:$("studentAddress").value.trim(),admission_date:$("admissionDate").value||null};
  const result=oldId?await db.from("students").update(record).eq("id",oldId):await db.from("students").insert(record);
  if(result.error)return toast(result.error.message);
  closeModal();await loadData();toast(oldId?"Student updated.":"Student added successfully.");
 });
+$("closeStudentDetails").addEventListener("click",closeStudentDetails);$("closeStudentDetailsBtn").addEventListener("click",closeStudentDetails);$("studentDetailsBackdrop").addEventListener("click",e=>{if(e.target===$("studentDetailsBackdrop"))closeStudentDetails()});
 $("closeModal").addEventListener("click",closeModal);$("cancelModal").addEventListener("click",closeModal);$("modalBackdrop").addEventListener("click",e=>{if(e.target===$("modalBackdrop"))closeModal()});
 $("courseForm").addEventListener("submit",async e=>{e.preventDefault();const id=$("editCourseId").value;const record={name:$("courseName").value.trim(),code:$("courseCode").value.trim().toUpperCase(),description:$("courseDescription").value.trim(),duration:$("courseDuration").value.trim()};if(!record.name||!record.code)return toast("Course name and code are required.");const result=id?await db.from("courses").update(record).eq("id",id):await db.from("courses").insert(record);if(result.error)return toast(result.error.code==="23505"?"A course with this name or code already exists.":result.error.message);closeCourseModal();await loadData();toast(id?"Course updated.":"Course added successfully.");});
 $("closeCourseModal").addEventListener("click",closeCourseModal);$("cancelCourseModal").addEventListener("click",closeCourseModal);$("courseModalBackdrop").addEventListener("click",e=>{if(e.target===$("courseModalBackdrop"))closeCourseModal()});
