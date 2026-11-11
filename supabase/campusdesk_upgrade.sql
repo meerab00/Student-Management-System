@@ -14,3 +14,12 @@ create index if not exists exams_course_id_idx on public.exams(course_id);
 create index if not exists results_student_id_idx on public.results(student_id);
 create index if not exists fee_records_student_id_idx on public.fee_records(student_id);
 create index if not exists timetable_course_day_idx on public.timetable(course_id,weekday);
+
+-- Role profiles are deliberately restricted: users cannot promote themselves.
+drop policy if exists "Users manage own user_profiles" on public.user_profiles;
+create policy "Users read own profile" on public.user_profiles for select to authenticated using ((select auth.uid())=user_id);
+create policy "Users create student profile" on public.user_profiles for insert to authenticated with check ((select auth.uid())=user_id and role='student');
+create policy "Users update own profile display name" on public.user_profiles for update to authenticated using ((select auth.uid())=user_id) with check ((select auth.uid())=user_id and role='student');
+revoke all on public.user_profiles from authenticated;
+grant select, insert on public.user_profiles to authenticated;
+grant update(display_name) on public.user_profiles to authenticated;
