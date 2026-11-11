@@ -9,8 +9,18 @@ CampusDesk is a responsive, browser-based Student Management System. It uses Sup
 - Add, edit, search and delete student records
 - Add and view courses
 - Mark attendance as Present, Absent or Late
+- Export student lists and date-wise attendance reports as CSV
 - Supabase Row Level Security: each signed-in account can access only its own records
 - Responsive layout for desktop and mobile browsers
+
+## Main workflows
+
+1. The administrator signs in using the pre-created Supabase Auth account.
+2. The dashboard loads live student, course and attendance summaries.
+3. Student records can be added, searched, edited (including Student ID), and deleted.
+4. Courses can be created, edited and removed. When a course is removed, its students remain and their course assignment is cleared.
+5. Attendance is recorded by date. Every active student must have an explicit status before saving.
+6. Student and attendance data can be exported as CSV for spreadsheet use.
 
 ## Technology
 
