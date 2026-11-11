@@ -87,11 +87,16 @@ function showPage(page){document.querySelectorAll(".page-view").forEach(v=>v.cla
 function openStudentModal(student=null){
  $("studentForm").reset();$("editStudentId").value=student?.id||"";$("modalTitle").textContent=student?"Edit student":"Add student";$("studentId").disabled=false;
  $("studentCourse").innerHTML=courses.map(c=>`<option value="${c.id}">${escapeHTML(c.name)}</option>`).join("");
- if(student){$("studentName").value=student.name;$("studentId").value=student.studentNumber;$("studentEmail").value=student.email;$("studentPhone").value=student.phone||"";$("studentCourse").value=student.courseId||"";$("studentDob").value=student.dateOfBirth;$("studentGender").value=student.gender;$("fatherName").value=student.fatherName;$("fatherCnic").value=student.fatherCnic;$("motherName").value=student.motherName;$("motherCnic").value=student.motherCnic;$("guardianPhone").value=student.guardianPhone;$("studentAddress").value=student.address;$("admissionDate").value=student.admissionDate}else{$("admissionDate").value=today()}
+ if(student){$("studentName").value=student.name;$("studentId").value=student.studentNumber;$("studentEmail").value=student.email;$("studentPhone").value=student.phone||"";$("studentCourse").value=student.courseId||"";}
  $("modalBackdrop").classList.add("open");
 }
 function closeModal(){$("modalBackdrop").classList.remove("open");$("studentId").disabled=false}
-function showStudentDetails(student){const fields=[["Student name",student.name],["Student ID",student.studentNumber],["Date of birth",student.dateOfBirth],["Gender",student.gender],["Email",student.email],["Student phone",student.phone],["Course / Subject",courseName(student.courseId)],["Father's name",student.fatherName],["Father's CNIC",student.fatherCnic],["Mother's name",student.motherName],["Mother's CNIC",student.motherCnic],["Parent / guardian phone",student.guardianPhone],["Home address",student.address],["Admission date",student.admissionDate],["Status",student.active?"Active":"Inactive"]];$("studentDetailsTitle").textContent=student.name+" — Admission file";$("studentDetailsContent").innerHTML=fields.map(([label,value])=>'<div class="detail-item"><small>'+escapeHTML(label)+'</small><strong>'+escapeHTML(value||"Not provided")+'</strong></div>').join("");$("studentDetailsBackdrop").classList.add("open")}
+function showStudentDetails(student){
+ const fields=[["Student name",student.name],["Student ID",student.studentNumber],["Subject / Course",courseName(student.courseId)],["Phone number",student.phone],["Gmail address",student.email]];
+ $("studentDetailsTitle").textContent=student.name+" — Student details";
+ $("studentDetailsContent").innerHTML=fields.map(([label,value])=>'<div class="detail-item"><small>'+escapeHTML(label)+'</small><strong>'+escapeHTML(value||"Not provided")+'</strong></div>').join("");
+ $("studentDetailsBackdrop").classList.add("open");
+}
 function closeStudentDetails(){$("studentDetailsBackdrop").classList.remove("open")}
 async function handleAuth(e){
  e.preventDefault();const email=$("authEmail").value.trim(),password=$("authPassword").value;
@@ -123,12 +128,25 @@ document.addEventListener("click",async e=>{
  const del=e.target.closest("[data-delete]");if(del){const s=students.find(x=>x.id===del.dataset.delete);if(s&&confirm("Delete "+s.name+"? This cannot be undone.")){const {error}=await db.from("students").delete().eq("id",s.id);if(error)return toast(error.message);await loadData();toast("Student deleted.")}}
 });
 $("studentForm").addEventListener("submit",async e=>{
- e.preventDefault();const oldId=$("editStudentId").value;
+ e.preventDefault();
+ const oldId=$("editStudentId").value;
  const existing=oldId?students.find(s=>s.id===oldId):null;
- const record={student_number:$("studentId").value.trim(),full_name:$("studentName").value.trim(),email:$("studentEmail").value.trim(),phone:$("studentPhone").value.trim(),course_id:$("studentCourse").value||null,is_active:existing?existing.active:true,father_name:$("fatherName").value.trim(),father_cnic:$("fatherCnic").value.trim(),mother_name:$("motherName").value.trim(),mother_cnic:$("motherCnic").value.trim(),guardian_phone:$("guardianPhone").value.trim(),date_of_birth:$("studentDob").value||null,gender:$("studentGender").value||null,address:$("studentAddress").value.trim(),admission_date:$("admissionDate").value||null};
- const result=oldId?await db.from("students").update(record).eq("id",oldId):await db.from("students").insert(record);
- if(result.error)return toast(result.error.message);
- closeModal();await loadData();toast(oldId?"Student updated.":"Student added successfully.");
+ const saveButton=$("saveStudentBtn");saveButton.disabled=true;saveButton.textContent="Saving…";
+ const record={
+  user_id:currentUser.id,
+  student_number:$("studentId").value.trim(),
+  full_name:$("studentName").value.trim(),
+  email:$("studentEmail").value.trim(),
+  phone:$("studentPhone").value.trim(),
+  course_id:$("studentCourse").value||null,
+  is_active:existing?existing.active:true
+ };
+ try{
+  const result=oldId?await db.from("students").update(record).eq("id",oldId).eq("user_id",currentUser.id):await db.from("students").insert(record);
+  if(result.error)throw result.error;
+  closeModal();await loadData();toast(oldId?"Student updated.":"Student added successfully.");
+ }catch(err){toast("Could not save student: "+(err.message||"Please try again."));}
+ finally{saveButton.disabled=false;saveButton.textContent="Save student";}
 });
 $("closeStudentDetails").addEventListener("click",closeStudentDetails);$("closeStudentDetailsBtn").addEventListener("click",closeStudentDetails);$("studentDetailsBackdrop").addEventListener("click",e=>{if(e.target===$("studentDetailsBackdrop"))closeStudentDetails()});
 $("closeModal").addEventListener("click",closeModal);$("cancelModal").addEventListener("click",closeModal);$("modalBackdrop").addEventListener("click",e=>{if(e.target===$("modalBackdrop"))closeModal()});
