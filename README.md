@@ -4,7 +4,7 @@ CampusDesk is a responsive, browser-based Student Management System. It uses Sup
 
 ## Features
 
-- Administrator sign-up, sign-in and sign-out
+- Single administrator sign-in and sign-out (public registration is not provided)
 - Dashboard with student, course and attendance summaries
 - Add, edit, search and delete student records
 - Add and view courses
@@ -29,7 +29,7 @@ To apply the schema to another Supabase project, open its SQL Editor and run the
 
 ## Run locally
 
-Open `index.html` in a modern browser, or serve the repository with any static web server. Create an administrator account from the sign-in screen. If email confirmation is enabled in Supabase Auth, confirm the email before signing in.
+Open `index.html` in a modern browser, or serve the repository with any static web server. Create the one administrator account in Supabase Authentication before publishing the app, then disable public sign-ups in Supabase Auth settings. The browser app intentionally provides sign-in only. If email confirmation is enabled, confirm the administrator email before signing in.
 
 ## Publish with GitHub Pages
 
