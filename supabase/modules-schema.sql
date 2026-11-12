@@ -92,6 +92,20 @@ create table if not exists public.user_profiles (
   created_at timestamptz not null default now()
 );
 
+do $
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'subjects_semester_range_check'
+      and conrelid = 'public.subjects'::regclass
+  ) then
+    alter table public.subjects add constraint subjects_semester_range_check
+      check (semester is null or semester between 1 and 8) not valid;
+  end if;
+end;
+$;
+alter table public.subjects validate constraint subjects_semester_range_check;
+
 alter table public.subjects enable row level security;
 alter table public.teachers enable row level security;
 alter table public.enrollments enable row level security;
