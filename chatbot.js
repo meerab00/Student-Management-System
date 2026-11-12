@@ -50,6 +50,25 @@
 
   function answer(question) {
     const s = question.toLowerCase();
+    const context = window.getCampusDeskChatContext?.() || {};
+    const totals = context.totals || {};
+    const attendance = context.attendanceToday || {};
+    const fees = context.fees || {};
+    if (/how many|total.*student|student.*count/.test(s) && /student/.test(s) && Number.isFinite(totals.students)) {
+      return `CampusDesk has ${totals.students} student records: ${totals.activeStudents||0} active and ${totals.inactiveStudents||0} inactive.`;
+    }
+    if (/attendance|present today|absent today/.test(s) && /today|current/.test(s)) {
+      return `Today's attendance (${context.asOf||"current date"}): ${attendance.present||0} Present, ${attendance.absent||0} Absent, ${attendance.late||0} Late and ${attendance.notMarked||0} not marked.`;
+    }
+    if (/fee|outstanding|dues|paid amount/.test(s) && Number.isFinite(fees.outstanding)) {
+      return `Fee summary: Rs ${Number(fees.billed||0).toLocaleString("en-PK")} billed, Rs ${Number(fees.paid||0).toLocaleString("en-PK")} paid, and Rs ${Number(fees.outstanding||0).toLocaleString("en-PK")} outstanding across ${fees.records||0} fee records.`;
+    }
+    if (/course.*student|students.*course|course wise/.test(s) && Array.isArray(context.courseBreakdown)) {
+      return context.courseBreakdown.map(x=>`${x.course}: ${x.students} students and ${x.subjects} subjects`).join("\\n") || "No course records are available.";
+    }
+    if (/dashboard.*summary|system.*summary|overall.*summary/.test(s) && totals.students !== undefined) {
+      return `Current CampusDesk summary: ${totals.students} students, ${totals.courses} courses, ${totals.subjects} subjects, ${totals.teachers} teachers, ${totals.enrollments} enrollments, ${totals.exams} exams, ${totals.results} results and Rs ${Number(fees.outstanding||0).toLocaleString("en-PK")} outstanding fees.`;
+    }
 
     if (/\b(hello|hi|salam|assalam)\b/.test(s)) {
       return "Hello! Welcome to CampusDesk. I can guide you about students, courses, subjects, enrollments, teachers, attendance, exams, results, fees and timetable.";
