@@ -235,5 +235,5 @@ $("menuBtn").addEventListener("click",()=>$("sidebar").classList.toggle("open"))
 $("logoutBtn").addEventListener("click",async()=>{await db.auth.signOut();currentUser=null;showAuth("You have signed out.")});
 $("todayDate").textContent=new Intl.DateTimeFormat("en",{weekday:"short",month:"short",day:"numeric",year:"numeric"}).format(new Date());
 $("attendanceDate").value=today();$("year").textContent=new Date().getFullYear();
-db.auth.getSession().then(async({data,error})=>{if(error)return showAuth(error.message);if(data.session){currentUser=data.session.user;showApp();try{await loadData()}catch(err){await db.auth.signOut();currentUser=null;showAuth("Could not load records: "+err.message)}}else showAuth()});
+(async()=>{try{await db.auth.signOut();}catch(error){console.error("Could not clear previous admin session:",error);}currentUser=null;showAuth();})();
 db.auth.onAuthStateChange((_event,session)=>{if(!session){currentUser=null;showAuth()}});
