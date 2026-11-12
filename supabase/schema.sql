@@ -104,3 +104,65 @@ create policy "Users manage own institution profile" on public.institution_profi
 using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()));
 revoke all on table public.institution_profiles from anon;
 grant select, insert, update, delete on table public.institution_profiles to authenticated;
+
+
+-- Generate permanent, unique Student IDs in the database.
+-- Existing IDs are preserved; numbering continues after the largest current-year suffix.
+create schema if not exists private;
+revoke all on schema private from public, anon, authenticated;
+
+create table if not exists private.student_id_counters (
+  user_id uuid not null,
+  id_year integer not null,
+  last_value bigint not null default 0,
+  primary key (user_id, id_year)
+);
+revoke all on table private.student_id_counters from public, anon, authenticated;
+
+create or replace function private.assign_student_number()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_year integer := extract(year from current_date)::integer;
+  v_next bigint;
+begin
+  if auth.uid() is null or new.user_id is distinct from auth.uid() then
+    raise exception 'You can only generate a Student ID for your own account.';
+  end if;
+
+  if tg_op = 'UPDATE' then
+    if new.student_number is distinct from old.student_number then
+      raise exception 'Student ID cannot be changed after creation.';
+    end if;
+    return new;
+  end if;
+
+  insert into private.student_id_counters (user_id, id_year, last_value)
+  values (
+    new.user_id,
+    v_year,
+    coalesce((
+      select max((regexp_match(s.student_number, '([0-9]+)$'))[1]::bigint)
+      from public.students as s
+      where s.user_id = new.user_id
+        and s.student_number ~ ('-' || v_year::text || '-[0-9]+$')
+    ), 0) + 1
+  )
+  on conflict (user_id, id_year)
+  do update set last_value = private.student_id_counters.last_value + 1
+  returning last_value into v_next;
+
+  new.student_number := 'STU-' || v_year::text || '-' || lpad(v_next::text, 4, '0');
+  return new;
+end;
+$$;
+
+revoke all on function private.assign_student_number() from public, anon, authenticated;
+
+drop trigger if exists students_assign_student_number on public.students;
+create trigger students_assign_student_number
+before insert or update on public.students
+for each row execute function private.assign_student_number();
