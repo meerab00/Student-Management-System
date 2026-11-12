@@ -10,14 +10,15 @@
     enrollments:{title:"Enrollment",table:"enrollments",fields:[
       {key:"student_id",label:"Student",type:"select",source:"students",required:true},
       {key:"course_id",label:"Course",type:"select",source:"courses",required:true},
-      {key:"enrolled_on",label:"Enrollment date",type:"date",default:new Date().toISOString().slice(0,10)},
+      {key:"semester",label:"Semester",type:"select",options:[["1","Semester 1"],["2","Semester 2"],["3","Semester 3"],["4","Semester 4"],["5","Semester 5"],["6","Semester 6"],["7","Semester 7"],["8","Semester 8"]]},
+      {key:"section",label:"Section"},{key:"enrolled_on",label:"Enrollment date",type:"date",default:new Date().toISOString().slice(0,10)},
       {key:"status",label:"Status",type:"select",options:[["Active","Active"],["Completed","Completed"],["Withdrawn","Withdrawn"]],default:"Active",required:true}]},
     teachers:{title:"Teacher",table:"teachers",fields:[
       {key:"full_name",label:"Full name",required:true},{key:"email",label:"Email",type:"email"},
       {key:"phone",label:"Phone"},{key:"specialization",label:"Specialization"}]},
     exams:{title:"Exam",table:"exams",fields:[
-      {key:"title",label:"Exam title",required:true},{key:"course_id",label:"Course",type:"select",source:"courses",required:true},
-      {key:"subject_id",label:"Subject",type:"select",source:"subjects"},{key:"exam_date",label:"Exam date",type:"date"},
+      {key:"title",label:"Exam title",required:true},{key:"exam_type",label:"Exam type",type:"select",options:[["Midterm","Midterm"],["Final","Final"],["Quiz","Quiz"],["Assignment","Assignment"],["Other","Other"]],required:true,default:"Other"},{key:"course_id",label:"Course",type:"select",source:"courses",required:true},
+      {key:"semester",label:"Semester",type:"select",options:[["1","Semester 1"],["2","Semester 2"],["3","Semester 3"],["4","Semester 4"],["5","Semester 5"],["6","Semester 6"],["7","Semester 7"],["8","Semester 8"]]},{key:"section",label:"Section"},{key:"subject_id",label:"Subject",type:"select",source:"subjects"},{key:"exam_date",label:"Exam date",type:"date"},
       {key:"total_marks",label:"Total marks",type:"number",required:true,default:"100"}]},
     results:{title:"Result",table:"results",fields:[
       {key:"exam_id",label:"Exam",type:"select",source:"exams",required:true},
@@ -35,6 +36,7 @@
       {key:"title",label:"Event title",required:true},{key:"start_date",label:"Start date",type:"date",required:true},{key:"end_date",label:"End date",type:"date"},{key:"description",label:"Description"}]},
     timetable:{title:"Timetable class",table:"timetable",fields:[
       {key:"course_id",label:"Course",type:"select",source:"courses",required:true},
+      {key:"semester",label:"Semester",type:"select",options:[["1","Semester 1"],["2","Semester 2"],["3","Semester 3"],["4","Semester 4"],["5","Semester 5"],["6","Semester 6"],["7","Semester 7"],["8","Semester 8"]],required:true},{key:"section",label:"Section",required:true},
       {key:"subject_id",label:"Subject",type:"select",source:"subjects",required:true},
       {key:"teacher_id",label:"Teacher",type:"select",source:"teachers",required:true},
       {key:"weekday",label:"Day",type:"select",options:[["1","Monday"],["2","Tuesday"],["3","Wednesday"],["4","Thursday"],["5","Friday"],["6","Saturday"]],required:true},
@@ -67,7 +69,8 @@
     state.fees=responses[5].data||[];
     state.timetable=responses[6].data||[];
     state.calendar=responses[7].data||[];
-    window.getSessionStudents=()=>students.filter(student=>state.enrollments.some(enrollment=>enrollment.student_id===student.id&&enrollment.status!=="Withdrawn"));
+    window.getSessionStudents=()=>students.filter(student=>state.enrollments.some(enrollment=>enrollment.student_id===student.id&&enrollment.status!=="Withdrawn")).map(student=>{const enrollment=state.enrollments.find(x=>x.student_id===student.id);return {...student,semester:enrollment?.semester??"",section:enrollment?.section??""};});
+    window.getSessionEnrollment=studentId=>state.enrollments.find(enrollment=>enrollment.student_id===studentId)||null;
     renderModules();
   }
   function renderModules(){
@@ -84,15 +87,15 @@
     }
     const selectedCourse=$m("subjectCourseFilter")?.value||"all";
     $m("subjectsTable").innerHTML = state.subjects.filter(x=>selectedCourse==="all"||x.course_id===selectedCourse).slice().sort((a,b)=>(a.semester||99)-(b.semester||99)||a.name.localeCompare(b.name)).map(x=>`<tr><td>${escape(x.name)}</td><td>${escape(x.code)}</td><td>${x.semester?`Semester ${escape(x.semester)}`:"—"}</td><td>${escape(courseLabel(x.course_id))}</td><td><button class="action-btn" data-module-edit="subjects" data-id="${x.id}">Edit</button><button class="action-btn delete" data-module-delete="subjects" data-id="${x.id}">Delete</button></td></tr>`).join("") || '<tr><td colspan="4" class="empty-state">No subjects yet.</td></tr>';
-    $m("enrollmentsTable").innerHTML = state.enrollments.map(x=>{const student=students.find(s=>s.id===x.student_id);return "<tr><td>"+escape(student?.name||"—")+"</td><td>"+escape(student?.studentNumber||"—")+"</td><td>"+escape(courseLabel(x.course_id))+"</td><td>"+escape(x.enrolled_on||"—")+"</td><td>"+escape(x.status)+"</td><td><button class=\"action-btn\" data-module-edit=\"enrollments\" data-id=\""+x.id+"\">Edit</button><button class=\"action-btn delete\" data-module-delete=\"enrollments\" data-id=\""+x.id+"\">Delete</button></td></tr>"}).join("") || "<tr><td colspan=\"6\" class=\"empty-state\">No enrollments yet.</td></tr>";
+    $m("enrollmentsTable").innerHTML = state.enrollments.map(x=>{const student=students.find(s=>s.id===x.student_id);return "<tr><td>"+escape(student?.name||"—")+"</td><td>"+escape(student?.studentNumber||"—")+"</td><td>"+escape(courseLabel(x.course_id))+"</td><td>"+escape(x.semester?"Semester "+x.semester:"—")+"</td><td>"+escape(x.section||"—")+"</td><td>"+escape(x.enrolled_on||"—")+"</td><td>"+escape(x.status)+"</td><td><button class=\"action-btn\" data-module-edit=\"enrollments\" data-id=\""+x.id+"\">Edit</button><button class=\"action-btn delete\" data-module-delete=\"enrollments\" data-id=\""+x.id+"\">Delete</button></td></tr>"}).join("") || "<tr><td colspan=\"8\" class=\"empty-state\">No enrollments yet.</td></tr>";
     $m("teachersTable").innerHTML = state.teachers.map(x=>`<tr><td><b>${escape(x.full_name)}</b></td><td>${escape(x.email)}</td><td>${escape(x.phone)}</td><td>${escape(x.specialization)}</td><td><button class="action-btn" data-module-edit="teachers" data-id="${x.id}">Edit</button><button class="action-btn delete" data-module-delete="teachers" data-id="${x.id}">Delete</button></td></tr>`).join("") || '<tr><td colspan="5" class="empty-state">No teachers yet.</td></tr>';
-    $m("examsTable").innerHTML = state.exams.map(x=>`<tr><td>${escape(x.title)}</td><td>${escape(courseLabel(x.course_id))}</td><td>${escape(subjectLabel(x.subject_id))}</td><td>${escape(x.exam_date||"—")}</td><td>${escape(x.total_marks)}</td><td><button class="action-btn" data-module-edit="exams" data-id="${x.id}">Edit</button><button class="action-btn delete" data-module-delete="exams" data-id="${x.id}">Delete</button></td></tr>`).join("") || '<tr><td colspan="6" class="empty-state">No exams scheduled yet.</td></tr>';
+    $m("examsTable").innerHTML = state.exams.map(x=>`<tr><td>${escape(x.title)}</td><td>${escape(x.exam_type||"Other")}</td><td>${escape(courseLabel(x.course_id))}</td><td>${escape(x.semester?"Semester "+x.semester:"—")}</td><td>${escape(x.section||"—")}</td><td>${escape(subjectLabel(x.subject_id))}</td><td>${escape(x.exam_date||"—")}</td><td>${escape(x.total_marks)}</td><td><button class="action-btn" data-module-edit="exams" data-id="${x.id}">Edit</button><button class="action-btn delete" data-module-delete="exams" data-id="${x.id}">Delete</button></td></tr>`).join("") || '<tr><td colspan="9" class="empty-state">No exams scheduled yet.</td></tr>';
     $m("resultsTable").innerHTML = state.results.map(x=>{const exam=state.exams.find(e=>e.id===x.exam_id);const pct=exam?Math.round(Number(x.obtained_marks)/Number(exam.total_marks)*100):0;const grade=pct>=80?"A":pct>=70?"B":pct>=60?"C":pct>=50?"D":"F";return `<tr><td>${escape(studentLabel(x.student_id))}</td><td>${escape(examLabel(x.exam_id))}</td><td>${escape(x.obtained_marks)} / ${escape(exam?.total_marks||"—")}</td><td>${pct}%</td><td><span class="pill ${grade==="F"?"inactive":""}">${grade}</span></td><td><button class="action-btn" data-module-edit="results" data-id="${x.id}">Edit</button><button class="action-btn delete" data-module-delete="results" data-id="${x.id}">Delete</button></td></tr>`}).join("") || '<tr><td colspan="6" class="empty-state">No results recorded yet.</td></tr>';
     const billed=state.fees.reduce((n,x)=>n+Number(x.amount||0),0),collected=state.fees.reduce((n,x)=>n+Number(x.paid_amount||0),0),due=billed-collected;
     $m("feeBilled").textContent=money(billed);$m("feeCollected").textContent=money(collected);$m("feeOutstanding").textContent=money(due);
     $m("feesTable").innerHTML = state.fees.map(x=>`<tr><td>${escape(studentLabel(x.student_id))}</td><td>${escape(x.fee_title)}</td><td>${money(x.amount)}</td><td>${money(x.paid_amount)}</td><td><b>${money(Number(x.amount)-Number(x.paid_amount))}</b></td><td>${escape(x.due_date||"—")}</td><td><span class="pill ${x.status==="Pending"?"inactive":""}">${escape(x.status)}</span></td></tr>`).join("") || '<tr><td colspan="7" class="empty-state">No fee records yet.</td></tr>';
     const days=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
-    $m("timetableTable").innerHTML = state.timetable.slice().sort((a,b)=>a.weekday-b.weekday||a.start_time.localeCompare(b.start_time)).map(x=>`<tr><td>${days[x.weekday-1]||"—"}</td><td>${escape(String(x.start_time).slice(0,5))}–${escape(String(x.end_time).slice(0,5))}</td><td>${escape(courseLabel(x.course_id))}</td><td>${escape(subjectLabel(x.subject_id))}</td><td>${escape(teacherLabel(x.teacher_id))}</td><td>${escape(x.room||"—")}</td></tr>`).join("") || '<tr><td colspan="6" class="empty-state">No classes scheduled yet.</td></tr>';
+    $m("timetableTable").innerHTML = state.timetable.slice().sort((a,b)=>a.weekday-b.weekday||a.start_time.localeCompare(b.start_time)).map(x=>`<tr><td>${days[x.weekday-1]||"—"}</td><td>${escape(String(x.start_time).slice(0,5))}–${escape(String(x.end_time).slice(0,5))}</td><td>${escape(courseLabel(x.course_id))}</td><td>${escape(x.semester?"Semester "+x.semester:"—")}</td><td>${escape(x.section||"—")}</td><td>${escape(subjectLabel(x.subject_id))}</td><td>${escape(teacherLabel(x.teacher_id))}</td><td>${escape(x.room||"—")}</td></tr>`).join("") || '<tr><td colspan="8" class="empty-state">No classes scheduled yet.</td></tr>';
     const pending = state.fees.reduce((n,x)=>n+Math.max(0,Number(x.amount)-Number(x.paid_amount)),0);
     const upcoming = state.exams.filter(x=>!x.exam_date||x.exam_date>=new Date().toISOString().slice(0,10)).length;
     if($m("statTeachers"))$m("statTeachers").textContent=state.teachers.length;
@@ -103,7 +106,7 @@
     if($m("calendarTable"))$m("calendarTable").innerHTML=state.calendar.slice().sort((a,b)=>a.start_date.localeCompare(b.start_date)).map(x=>`<tr><td><b>${escape(x.title)}</b></td><td>${escape(x.event_type)}</td><td>${escape(x.start_date)}</td><td>${escape(x.end_date||"—")}</td><td>${escape(x.description||"—")}</td><td><button class="action-btn" data-module-edit="calendar" data-id="${x.id}">Edit</button><button class="action-btn delete" data-module-delete="calendar" data-id="${x.id}">Delete</button></td></tr>`).join("")||'<tr><td colspan="6" class="empty-state">No calendar events added for this session.</td></tr>';
   }
   function sourceOptions(field){
-    let rows = field.source==="courses" ? courses : field.source==="students" ? students : field.source==="subjects" ? state.subjects : field.source==="teachers" ? state.teachers : state.exams;
+    let rows = field.source==="courses" ? courses : field.source==="students" ? (activeType==="results"&&window.getSessionStudents?window.getSessionStudents():students) : field.source==="subjects" ? state.subjects : field.source==="teachers" ? state.teachers : state.exams;
     return (field.options||rows.map(x=>[x.id,field.source==="courses"?x.name:field.source==="students"?x.name:field.source==="subjects"?x.name+" ("+x.code+")":field.source==="teachers"?x.full_name:x.title])).map(x=>`<option value="${escape(x[0])}">${escape(x[1])}</option>`).join("");
   }
   function openModuleForm(type,row=null){
