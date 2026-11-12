@@ -6,7 +6,7 @@
 create table if not exists public.academic_sessions (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
-  session_type text not null check (session_type in ('Spring','Summer','Winter')),
+  session_type text not null check (session_type in ('Spring','Summer','Fall')),
   academic_year integer not null default extract(year from current_date)::integer,
   start_date date,
   end_date date,
@@ -43,7 +43,7 @@ from (
   union select user_id from public.courses
   union select user_id from public.teachers
 ) owners
-cross join (values ('Spring'),('Summer'),('Winter')) as sessions(session_type)
+cross join (values ('Spring'),('Summer'),('Fall')) as sessions(session_type)
 on conflict (user_id, session_type, academic_year) do nothing;
 
 update public.enrollments e set session_id = s.id
