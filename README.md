@@ -44,7 +44,7 @@ The Groq API key must be stored as the `GROQ_API_KEY` secret in Supabase Edge Fu
 
 The Supabase project is configured for this app. The schema is maintained in `supabase/schema.sql` (core tables) and `supabase/modules-schema.sql` (subjects, enrollments, teachers, exams, results, fees, timetable and user profiles). Both scripts enable Row Level Security, add per-user access policies, and grant access only to authenticated users.
 
-To apply the core schema to another Supabase project, open its SQL Editor and run the complete `supabase/schema.sql` script. Configure the matching project URL and publishable key in `app.js`.
+To set up another Supabase project, open its SQL Editor and run `supabase/schema.sql` first, then run `supabase/modules-schema.sql`. Configure the matching project URL and publishable key in `app.js`.
 
 **Security:** The frontend uses only a Supabase publishable key. Never put a Supabase secret or service-role key in browser code.
 
