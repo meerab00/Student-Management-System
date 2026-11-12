@@ -70,7 +70,7 @@
     $m("enrollmentsTable").innerHTML = state.enrollments.map(x=>{const student=students.find(s=>s.id===x.student_id);return "<tr><td>"+escape(student?.name||"—")+"</td><td>"+escape(student?.studentNumber||"—")+"</td><td>"+escape(courseLabel(x.course_id))+"</td><td>"+escape(x.enrolled_on||"—")+"</td><td>"+escape(x.status)+"</td><td><button class=\"action-btn\" data-module-edit=\"enrollments\" data-id=\""+x.id+"\">Edit</button><button class=\"action-btn delete\" data-module-delete=\"enrollments\" data-id=\""+x.id+"\">Delete</button></td></tr>"}).join("") || "<tr><td colspan=\"6\" class=\"empty-state\">No enrollments yet.</td></tr>";
     $m("teachersTable").innerHTML = state.teachers.map(x=>`<tr><td><b>${escape(x.full_name)}</b></td><td>${escape(x.email)}</td><td>${escape(x.phone)}</td><td>${escape(x.specialization)}</td><td><button class="action-btn" data-module-edit="teachers" data-id="${x.id}">Edit</button><button class="action-btn delete" data-module-delete="teachers" data-id="${x.id}">Delete</button></td></tr>`).join("") || '<tr><td colspan="5" class="empty-state">No teachers yet.</td></tr>';
     $m("examsTable").innerHTML = state.exams.map(x=>`<tr><td>${escape(x.title)}</td><td>${escape(courseLabel(x.course_id))}</td><td>${escape(subjectLabel(x.subject_id))}</td><td>${escape(x.exam_date||"—")}</td><td>${escape(x.total_marks)}</td><td><button class="action-btn" data-module-edit="exams" data-id="${x.id}">Edit</button><button class="action-btn delete" data-module-delete="exams" data-id="${x.id}">Delete</button></td></tr>`).join("") || '<tr><td colspan="6" class="empty-state">No exams scheduled yet.</td></tr>';
-    $m("resultsTable").innerHTML = state.results.map(x=>{const exam=state.exams.find(e=>e.id===x.exam_id);const pct=exam?Math.round(Number(x.obtained_marks)/Number(exam.total_marks)*100):0;const grade=pct>=80?"A":pct>=70?"B":pct>=60?"C":pct>=50?"D":"F";return `<tr><td>${escape(studentLabel(x.student_id))}</td><td>${escape(examLabel(x.exam_id))}</td><td>${escape(x.obtained_marks)} / ${escape(exam?.total_marks||"—")}</td><td>${pct}%</td><td><span class="pill ${grade==="F"?"inactive":""}">${grade}</span></td></tr>`}).join("") || '<tr><td colspan="5" class="empty-state">No results recorded yet.</td></tr>';
+    $m("resultsTable").innerHTML = state.results.map(x=>{const exam=state.exams.find(e=>e.id===x.exam_id);const pct=exam?Math.round(Number(x.obtained_marks)/Number(exam.total_marks)*100):0;const grade=pct>=80?"A":pct>=70?"B":pct>=60?"C":pct>=50?"D":"F";return `<tr><td>${escape(studentLabel(x.student_id))}</td><td>${escape(examLabel(x.exam_id))}</td><td>${escape(x.obtained_marks)} / ${escape(exam?.total_marks||"—")}</td><td>${pct}%</td><td><span class="pill ${grade==="F"?"inactive":""}">${grade}</span></td><td><button class="action-btn" data-module-edit="results" data-id="${x.id}">Edit</button><button class="action-btn delete" data-module-delete="results" data-id="${x.id}">Delete</button></td></tr>`}).join("") || '<tr><td colspan="5" class="empty-state">No results recorded yet.</td></tr>';
     const billed=state.fees.reduce((n,x)=>n+Number(x.amount||0),0),collected=state.fees.reduce((n,x)=>n+Number(x.paid_amount||0),0),due=billed-collected;
     $m("feeBilled").textContent=money(billed);$m("feeCollected").textContent=money(collected);$m("feeOutstanding").textContent=money(due);
     $m("feesTable").innerHTML = state.fees.map(x=>`<tr><td>${escape(studentLabel(x.student_id))}</td><td>${escape(x.fee_title)}</td><td>${money(x.amount)}</td><td>${money(x.paid_amount)}</td><td><b>${money(Number(x.amount)-Number(x.paid_amount))}</b></td><td>${escape(x.due_date||"—")}</td><td><span class="pill ${x.status==="Pending"?"inactive":""}">${escape(x.status)}</span></td></tr>`).join("") || '<tr><td colspan="7" class="empty-state">No fee records yet.</td></tr>';
@@ -110,9 +110,10 @@
     e.preventDefault();if(!activeType)return;const type=activeType,config=configs[type],form=new FormData(e.currentTarget),record={user_id:currentUser.id};
     config.fields.forEach(f=>{const v=form.get(f.key);record[f.key]=v===""?null:v;});
     if(type==="exams")record.total_marks=Number(record.total_marks||100);
-    if(type==="results")record.obtained_marks=Number(record.obtained_marks);
+    if(type==="results"){record.obtained_marks=Number(record.obtained_marks);const exam=state.exams.find(x=>x.id===record.exam_id);if(!exam)return toast("Please select a valid exam.");if(record.obtained_marks<0||record.obtained_marks>Number(exam.total_marks))return toast("Obtained marks must be between 0 and "+exam.total_marks+".");const student=students.find(x=>x.id===record.student_id);if(student&&student.courseId&&student.courseId!==exam.course_id)return toast("Select a student enrolled in the exam course.");}
     if(type==="fees"){record.amount=Number(record.amount);record.paid_amount=Number(record.paid_amount||0);if(record.paid_amount>record.amount)return toast("Paid amount cannot exceed total fee.");record.status=record.paid_amount===0?"Pending":record.paid_amount>=record.amount?"Paid":"Partial";record.paid_on=record.paid_amount>0?new Date().toISOString().slice(0,10):null;}
     if(type==="timetable"&&record.end_time<=record.start_time)return toast("End time must be after start time.");
+    if((type==="exams"||type==="timetable")&&record.subject_id){const subject=state.subjects.find(x=>x.id===record.subject_id);if(!subject||subject.course_id!==record.course_id)return toast("Choose a subject that belongs to the selected course.");}
     const query=editingId?db.from(config.table).update(record).eq("id",editingId).eq("user_id",currentUser.id):db.from(config.table).insert(record);
     const {error}=await query;if(error)return toast(error.message);
     closeModuleForm();await loadAcademicModules();toast(config.title+" saved successfully.");
@@ -120,6 +121,21 @@
   $m("closeModuleModal").addEventListener("click",closeModuleForm);
   $m("cancelModuleModal").addEventListener("click",closeModuleForm);
   $m("moduleModalBackdrop").addEventListener("click",e=>{if(e.target===$m("moduleModalBackdrop"))closeModuleForm();});
-  window.loadAcademicModules=loadAcademicModules;
+  window.getCampusDeskChatContext=()=>{
+ const active=students.filter(s=>s.active).length;
+ const records=attendance[today()]||{};
+ const values=Object.values(records);
+ const billed=state.fees.reduce((n,x)=>n+Number(x.amount||0),0);
+ const collected=state.fees.reduce((n,x)=>n+Number(x.paid_amount||0),0);
+ const upcoming=state.exams.filter(x=>x.exam_date&&x.exam_date>=today()).length;
+ return {
+  asOf:today(),institution:institutionName,
+  totals:{students:students.length,activeStudents:active,inactiveStudents:students.length-active,courses:courses.length,subjects:state.subjects.length,teachers:state.teachers.length,enrollments:state.enrollments.length,exams:state.exams.length,upcomingExams:upcoming,results:state.results.length,timetableClasses:state.timetable.length},
+  attendanceToday:{present:values.filter(v=>v==="Present").length,absent:values.filter(v=>v==="Absent").length,late:values.filter(v=>v==="Late").length,notMarked:Math.max(0,active-values.length)},
+  fees:{billed,paid:collected,outstanding:Math.max(0,billed-collected),records:state.fees.length},
+  courseBreakdown:courses.map(c=>({course:c.name,students:students.filter(s=>s.courseId===c.id).length,subjects:state.subjects.filter(s=>s.course_id===c.id).length}))
+ };
+};
+window.loadAcademicModules=loadAcademicModules;
   window.refreshAcademicDashboard=renderModules;
 })();
