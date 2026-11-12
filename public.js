@@ -29,7 +29,7 @@ $p("year").textContent=new Date().getFullYear();
  ]);
  for(const q of queries)if(q.error)throw q.error;
  const [profile,sessions,courses,subjects,teachers,timetable,calendar]=queries.map(q=>q.data);
- payload={institution:profile?.institution_name||"CASPAM Department",sessions:sessions||[],courses:courses||[],subjects:subjects||[],teachers:teachers||[],timetable:timetable||[],calendar:calendar||[]};
+ payload={institution:profile?.institution_name||"Student Management System",sessions:sessions||[],courses:courses||[],subjects:subjects||[],teachers:teachers||[],timetable:timetable||[],calendar:calendar||[]};
  const courseById=Object.fromEntries(payload.courses.map(x=>[x.id,x.name]));
  const subjectById=Object.fromEntries(payload.subjects.map(x=>[x.id,x.name]));
  const teacherById=Object.fromEntries(payload.teachers.map(x=>[x.id,x.full_name]));
