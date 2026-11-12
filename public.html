@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Public academic information for BZU CASPAM Department.">
+<title>CASPAM | Public Department View</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="public.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script defer src="public.js"></script>
+</head>
+<body>
+<header class="pub-header"><a class="pub-brand" href="public.html"><span class="brand-mark">C</span><span>Campus<span>Desk</span></span></a><div class="pub-head-actions"><span class="public-pill">PUBLIC VIEW · READ ONLY</span><a class="admin-link" href="index.html">Admin Login</a></div></header>
+<main class="pub-main">
+<section class="hero"><div class="eyebrow">BAHAUDDIN ZAKARIYA UNIVERSITY</div><h1 id="institutionName">CASPAM Department</h1><p>Academic information, programmes and schedules in one place.</p><div class="hero-meta"><span>✦ Public information portal</span><span>🔒 Student records remain private</span></div></section>
+<section class="session-section"><div class="section-heading"><div><div class="eyebrow">ACADEMIC YEAR</div><h2>Choose an academic session</h2></div><span class="section-note">Select a session to explore its information</span></div><div id="sessionCards" class="session-grid"><div class="loading">Loading sessions…</div></div></section>
+<section class="overview-grid" id="overviewStats"></section>
+<section class="content-section"><div class="section-heading"><div><div class="eyebrow">ACADEMIC PROGRAMMES</div><h2>Courses & subjects</h2></div></div><div id="courseGrid" class="course-grid"></div></section>
+<section class="content-section"><div class="section-heading"><div><div class="eyebrow">ACADEMIC STAFF</div><h2>Teachers</h2></div></div><div id="teacherGrid" class="teacher-grid"></div></section>
+<section class="content-section"><div class="section-heading"><div><div class="eyebrow">WEEKLY SCHEDULE</div><h2>Timetable</h2></div><div class="filter-row"><label for="semesterFilter">Semester</label><select id="semesterFilter"><option value="all">All semesters</option><option value="1">Semester 1</option><option value="2">Semester 2</option><option value="3">Semester 3</option><option value="4">Semester 4</option><option value="5">Semester 5</option><option value="6">Semester 6</option><option value="7">Semester 7</option><option value="8">Semester 8</option></select><label for="sectionFilter">Section</label><select id="sectionFilter"><option value="all">All sections</option></select></div></div><div id="timetableGrid" class="timetable-grid"></div></section>
+<section class="content-section"><div class="section-heading"><div><div class="eyebrow">IMPORTANT DATES</div><h2>Academic calendar</h2></div></div><div id="calendarList" class="calendar-list"></div></section>
+<div class="privacy-note"><span>🔐</span><div><b>Your privacy matters</b><p>This public website does not display student names, student IDs, contact details, attendance, individual marks or fee/payment records.</p></div></div>
+</main>
+<footer class="pub-footer">© <span id="year"></span> CampusDesk · CASPAM Department <a href="index.html">Administrator access</a></footer>
+<div id="publicError" class="public-error" hidden></div>
+</body></html>
