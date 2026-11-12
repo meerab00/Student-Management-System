@@ -44,6 +44,8 @@
       {key:"room",label:"Room / Lab"}]}
   };
   let activeType = "";
+  let selectedTimetableSemester = "";
+  let selectedTimetableSection = "all";
   let editingId = "";
   const escape = value => String(value ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const courseLabel = id => courses.find(x=>x.id===id)?.name || "—";
@@ -94,10 +96,7 @@
     const billed=state.fees.reduce((n,x)=>n+Number(x.amount||0),0),collected=state.fees.reduce((n,x)=>n+Number(x.paid_amount||0),0),due=billed-collected;
     $m("feeBilled").textContent=money(billed);$m("feeCollected").textContent=money(collected);$m("feeOutstanding").textContent=money(due);
     $m("feesTable").innerHTML = state.fees.map(x=>`<tr><td>${escape(studentLabel(x.student_id))}</td><td>${escape(x.fee_title)}</td><td>${money(x.amount)}</td><td>${money(x.paid_amount)}</td><td><b>${money(Number(x.amount)-Number(x.paid_amount))}</b></td><td>${escape(x.due_date||"—")}</td><td><span class="pill ${x.status==="Pending"?"inactive":""}">${escape(x.status)}</span></td></tr>`).join("") || '<tr><td colspan="7" class="empty-state">No fee records yet.</td></tr>';
-    const days=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
-    const timetableCourse=$m("timetableCourseFilter")?.value||"all",timetableSemester=$m("timetableSemesterFilter")?.value||"",timetableSection=($m("timetableSectionFilter")?.value||"").trim().toLowerCase();
-    const timetableRows=state.timetable.filter(x=>String(x.semester||"")===timetableSemester&&(timetableCourse==="all"||x.course_id===timetableCourse)&&(!timetableSection||String(x.section||"").toLowerCase().includes(timetableSection))).slice().sort((a,b)=>a.weekday-b.weekday||a.start_time.localeCompare(b.start_time));
-    $m("timetableTable").innerHTML = !timetableSemester ? '<tr><td colspan="8" class="empty-state">Please select a semester to view its separate timetable.</td></tr>' : timetableRows.map(x=>`<tr><td>${days[x.weekday-1]||"—"}</td><td>${escape(String(x.start_time).slice(0,5))}–${escape(String(x.end_time).slice(0,5))}</td><td>${escape(courseLabel(x.course_id))}</td><td>${escape(x.semester?"Semester "+x.semester:"—")}</td><td>${escape(x.section||"—")}</td><td>${escape(subjectLabel(x.subject_id))}</td><td>${escape(teacherLabel(x.teacher_id))}</td><td>${escape(x.room||"—")}</td></tr>`).join("") || '<tr><td colspan="8" class="empty-state">No classes scheduled for this semester yet.</td></tr>';
+    renderTimetableWorkspace();
     const pending = state.fees.reduce((n,x)=>n+Math.max(0,Number(x.amount)-Number(x.paid_amount)),0);
     const upcoming = state.exams.filter(x=>!x.exam_date||x.exam_date>=new Date().toISOString().slice(0,10)).length;
     if($m("statTeachers"))$m("statTeachers").textContent=state.teachers.length;
@@ -107,6 +106,36 @@
     if($m("academicSnapshot"))$m("academicSnapshot").innerHTML=`<div><span>Teachers</span><b>${state.teachers.length}</b></div><div><span>Subjects</span><b>${state.subjects.length}</b></div><div><span>Exams scheduled</span><b>${upcoming}</b></div><div><span>Outstanding fees</span><b>${money(pending)}</b></div><div><span>Results recorded</span><b>${state.results.length}</b></div><div><span>Course enrollments</span><b>${state.enrollments.length}</b></div>`;
     if($m("calendarTable"))$m("calendarTable").innerHTML=state.calendar.slice().sort((a,b)=>a.start_date.localeCompare(b.start_date)).map(x=>`<tr><td><b>${escape(x.title)}</b></td><td>${escape(x.event_type)}</td><td>${escape(x.start_date)}</td><td>${escape(x.end_date||"—")}</td><td>${escape(x.description||"—")}</td><td><button class="action-btn" data-module-edit="calendar" data-id="${x.id}">Edit</button><button class="action-btn delete" data-module-delete="calendar" data-id="${x.id}">Delete</button></td></tr>`).join("")||'<tr><td colspan="6" class="empty-state">No calendar events added for this session.</td></tr>';
   }
+  function renderTimetableWorkspace(){
+    const days=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+    const courseFilter=$m("timetableCourseFilter")?.value||"all";
+    const detailFilter=$m("timetableCourseDetailFilter")?.value||courseFilter;
+    const courseRows=state.timetable.filter(x=>courseFilter==="all"||x.course_id===courseFilter);
+    const sessionStudents=window.getSessionStudents?window.getSessionStudents():[];
+    const host=$m("timetableSemesterCards");
+    if(host)host.innerHTML=Array.from({length:8},(_,i)=>i+1).map(n=>{
+      const rows=courseRows.filter(x=>Number(x.semester)===n);
+      const count=sessionStudents.filter(x=>Number(x.semester)===n&&(courseFilter==="all"||x.courseId===courseFilter)).length;
+      return `<button type="button" class="timetable-semester-card" data-timetable-semester="${n}"><span class="timetable-semester-number">0${n}</span><span class="timetable-semester-copy"><b>Semester ${n}</b><small>${rows.length} scheduled classes · ${count} students</small></span><span class="timetable-card-arrow">→</span></button>`;
+    }).join("");
+    const semesterView=$m("timetableSemesterView"),detailView=$m("timetableDetailView");
+    if(semesterView)semesterView.hidden=!!selectedTimetableSemester;
+    if(detailView)detailView.hidden=!selectedTimetableSemester;
+    if(!selectedTimetableSemester)return;
+    if($m("timetableSelectedTitle"))$m("timetableSelectedTitle").textContent="Semester "+selectedTimetableSemester+" timetable";
+    const matching=state.timetable.filter(x=>String(x.semester)===selectedTimetableSemester&&(detailFilter==="all"||x.course_id===detailFilter));
+    const enrolled=sessionStudents.filter(x=>String(x.semester)===selectedTimetableSemester&&(detailFilter==="all"||x.courseId===detailFilter)).map(x=>String(x.section||"").trim()).filter(Boolean);
+    const sections=[...new Set([...enrolled,...matching.map(x=>String(x.section||"").trim()).filter(Boolean)])].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
+    if(selectedTimetableSection!=="all"&&!sections.includes(selectedTimetableSection))selectedTimetableSection="all";
+    const sectionHost=$m("timetableSectionCards");
+    if(sectionHost)sectionHost.innerHTML=[["all","All sections"],...sections.map(s=>[s,"Section "+s])].map(([v,label])=>`<button type="button" class="timetable-section-card ${selectedTimetableSection===v?"active":""}" data-timetable-section="${escape(v)}">${escape(label)}</button>`).join("")||'<span class="muted">No sections have been assigned yet.</span>';
+    const rows=matching.filter(x=>selectedTimetableSection==="all"||String(x.section||"").trim()===selectedTimetableSection).sort((a,b)=>a.weekday-b.weekday||a.start_time.localeCompare(b.start_time));
+    const week=$m("timetableWeekGrid");
+    if(week)week.innerHTML=days.map((day,i)=>{
+      const classes=rows.filter(x=>Number(x.weekday)===i+1);
+      return `<article class="timetable-day-card"><div class="timetable-day-heading"><b>${day}</b><span>${classes.length} ${classes.length===1?"class":"classes"}</span></div><div class="timetable-day-classes">${classes.map(x=>`<div class="timetable-class-item"><div class="timetable-class-time">${escape(String(x.start_time).slice(0,5))} – ${escape(String(x.end_time).slice(0,5))}</div><b>${escape(subjectLabel(x.subject_id))}</b><span>${escape(courseLabel(x.course_id))} · Section ${escape(x.section||"—")}</span><small>${escape(teacherLabel(x.teacher_id))} · ${escape(x.room||"Room not set")}</small><div class="timetable-class-actions"><button type="button" class="action-btn" data-module-edit="timetable" data-id="${x.id}">Edit</button><button type="button" class="action-btn delete" data-module-delete="timetable" data-id="${x.id}">Delete</button></div></div>`).join("")||'<div class="timetable-no-class">No classes</div>'}</div></article>`;
+    }).join("");
+  }
   function sourceOptions(field){
     let rows = field.source==="courses" ? courses : field.source==="students" ? (["results","fees"].includes(activeType)&&window.getSessionStudents?window.getSessionStudents():students) : field.source==="subjects" ? state.subjects : field.source==="teachers" ? state.teachers : state.exams;
     return (field.options||rows.map(x=>[x.id,field.source==="courses"?x.name:field.source==="students"?x.name:field.source==="subjects"?x.name+" ("+x.code+")":field.source==="teachers"?x.full_name:x.title])).map(x=>`<option value="${escape(x[0])}">${escape(x[1])}</option>`).join("");
@@ -115,7 +144,9 @@
     activeType=type;editingId=row?.id||"";const config=configs[type];
     $m("moduleModalTitle").textContent=(row?"Edit ":"Add ")+config.title.toLowerCase();
     $m("moduleFormFields").innerHTML=config.fields.map(field=>{
-      const value=row?.[field.key]??field.default??"";
+      let value=row?.[field.key]??field.default??"";
+      if(type==="timetable"&&!row&&field.key==="semester"&&selectedTimetableSemester)value=selectedTimetableSemester;
+      if(type==="timetable"&&!row&&field.key==="section"&&selectedTimetableSection!=="all")value=selectedTimetableSection;
       if(field.type==="select")return `<label>${field.label}<select name="${field.key}" ${field.required?"required":""}><option value="">Choose ${field.label.toLowerCase()}</option>${sourceOptions(field)}</select></label>`;
       return `<label>${field.label}<input name="${field.key}" type="${field.type||"text"}" value="${escape(value)}" ${field.required?"required":""} ${field.type==="number"?'min="0" step="0.01"':""}></label>`;
     }).join("");
@@ -130,8 +161,10 @@
   });
   $m("subjectCourseFilter").addEventListener("change",renderModules);
   $m("timetableCourseFilter").addEventListener("change",renderModules);
-  $m("timetableSemesterFilter").addEventListener("change",renderModules);
-  $m("timetableSectionFilter").addEventListener("input",renderModules);
+  $m("timetableCourseDetailFilter").addEventListener("change",()=>{selectedTimetableSection="all";renderTimetableWorkspace();});
+  $m("timetableBackBtn").addEventListener("click",()=>{selectedTimetableSemester="";selectedTimetableSection="all";renderTimetableWorkspace();});
+  $m("timetableCourseFilter").addEventListener("change",()=>{selectedTimetableSemester="";selectedTimetableSection="all";renderTimetableWorkspace();});
+  $m("timetablePage").addEventListener("click",e=>{const sem=e.target.closest("[data-timetable-semester]");if(sem){selectedTimetableSemester=sem.dataset.timetableSemester;selectedTimetableSection="all";$m("timetableCourseDetailFilter").innerHTML=$m("timetableCourseFilter").innerHTML;$m("timetableCourseDetailFilter").value=$m("timetableCourseFilter").value||"all";renderTimetableWorkspace();return;}const sec=e.target.closest("[data-timetable-section]");if(sec){selectedTimetableSection=sec.dataset.timetableSection;renderTimetableWorkspace();}});
   $m("moduleForm").addEventListener("submit",async e=>{
     e.preventDefault();if(!activeType)return;const type=activeType,config=configs[type],form=new FormData(e.currentTarget),record={user_id:currentUser.id};
     config.fields.forEach(f=>{const v=form.get(f.key);record[f.key]=v===""?null:v;});
