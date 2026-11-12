@@ -133,20 +133,20 @@ function printCampusDeskReport(title, headers, rows, subtitle=""){
 }
 function exportStudentsPDF(){
  const filter=$("studentCourseFilter").value||"all",q=($("studentSearch").value||"").toLowerCase();
- const rows=students.filter(s=>(filter==="all"||s.courseId===filter)&&[s.name,s.studentNumber,s.email,courseName(s.courseId)].join(" ").toLowerCase().includes(q))
- .map(s=>[s.studentNumber,s.name,s.email,courseName(s.courseId),s.phone,s.active?"Active":"Inactive"]);
- printCampusDeskReport("Student Records",["Student ID","Student Name","Email","Course","Phone","Status"],rows,"Student records matching the current search and course filter.");
+ const rows=visibleStudents().filter(s=>(filter==="all"||s.courseId===filter)&&[s.name,s.studentNumber,s.email,courseName(s.courseId)].join(" ").toLowerCase().includes(q))
+ .map(s=>[s.studentNumber,s.name,s.email,courseName(s.courseId),s.semester?"Semester "+s.semester:"",s.section||"",s.phone,s.active?"Active":"Inactive"]);
+ printCampusDeskReport("Student Records",["Student ID","Student Name","Email","Course","Semester","Section","Phone","Status"],rows,"Session: "+activeAcademicSession.session_type+" "+activeAcademicSession.academic_year+". Student records matching the current search and course filter.");
 }
 function exportStudentPDF(studentId){
- const s=students.find(x=>x.id===studentId);
+ const s=visibleStudents().find(x=>x.id===studentId);
  if(!s)return toast("Student record not found.");
- const fields=[["Student name",s.name],["Student ID",s.studentNumber],["Date of birth",s.dateOfBirth],["Gender",s.gender],["Course",courseName(s.courseId)],["Email",s.email],["Phone number",s.phone],["Father name",s.fatherName],["Father CNIC",s.fatherCnic],["Mother name",s.motherName],["Mother CNIC",s.motherCnic],["Parent / guardian phone",s.guardianPhone],["Address",s.address],["Admission date",s.admissionDate],["Status",s.active?"Active":"Inactive"]];
+ const fields=[["Student name",s.name],["Student ID",s.studentNumber],["Academic session",activeAcademicSession.session_type+" "+activeAcademicSession.academic_year],["Semester",s.semester?"Semester "+s.semester:""],["Section",s.section],["Date of birth",s.dateOfBirth],["Gender",s.gender],["Course",courseName(s.courseId)],["Email",s.email],["Phone number",s.phone],["Father name",s.fatherName],["Father CNIC",s.fatherCnic],["Mother name",s.motherName],["Mother CNIC",s.motherCnic],["Parent / guardian phone",s.guardianPhone],["Address",s.address],["Admission date",s.admissionDate],["Status",s.active?"Active":"Inactive"]];
  printCampusDeskReport("Student Profile — "+s.name,["Information","Details"],fields,"Individual student profile. Keep this document confidential because it may contain personal information.");
 }
 function exportAttendancePDF(){
  const date=$("attendanceDate").value||today(),records=attendance[date]||{},filter=$("attendanceCourseFilter").value||"all";
- const rows=students.filter(s=>s.active&&(filter==="all"||s.courseId===filter)).map(s=>[s.studentNumber,s.name,courseName(s.courseId),records[s.id]||"Not marked"]);
- printCampusDeskReport("Attendance Report",["Student ID","Student Name","Course","Status"],rows,"Attendance date: "+date);
+ const rows=visibleStudents().filter(s=>s.active&&(filter==="all"||s.courseId===filter)).map(s=>[s.studentNumber,s.name,courseName(s.courseId),s.semester?"Semester "+s.semester:"",s.section||"",records[s.id]||"Not marked"]);
+ printCampusDeskReport("Attendance Report",["Student ID","Student Name","Course","Semester","Section","Status"],rows,"Session: "+activeAcademicSession.session_type+" "+activeAcademicSession.academic_year+" · Attendance date: "+date);
 }
 function showPage(page){document.querySelectorAll(".page-view").forEach(v=>v.classList.remove("active"));$(page+"Page").classList.add("active");document.querySelectorAll(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.page===page));$("pageCrumb").textContent=page[0].toUpperCase()+page.slice(1);$("sidebar").classList.remove("open");render()}
 function openStudentModal(student=null){
