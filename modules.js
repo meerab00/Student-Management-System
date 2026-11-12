@@ -141,7 +141,8 @@
   $m("cancelModuleModal").addEventListener("click",closeModuleForm);
   $m("moduleModalBackdrop").addEventListener("click",e=>{if(e.target===$m("moduleModalBackdrop"))closeModuleForm();});
   window.getCampusDeskChatContext=()=>{
- const active=students.filter(s=>s.active).length;
+ const currentStudents=window.getSessionStudents?window.getSessionStudents():students;
+ const active=currentStudents.filter(s=>s.active).length;
  const records=attendance[today()]||{};
  const values=Object.values(records);
  const billed=state.fees.reduce((n,x)=>n+Number(x.amount||0),0);
@@ -149,10 +150,11 @@
  const upcoming=state.exams.filter(x=>!x.exam_date||x.exam_date>=today()).length;
  return {
   asOf:today(),institution:institutionName,
-  totals:{students:students.length,activeStudents:active,inactiveStudents:students.length-active,courses:courses.length,subjects:state.subjects.length,teachers:state.teachers.length,enrollments:state.enrollments.length,exams:state.exams.length,upcomingExams:upcoming,results:state.results.length,timetableClasses:state.timetable.length},
+  totals:{students:currentStudents.length,activeStudents:active,inactiveStudents:currentStudents.length-active,courses:courses.length,subjects:state.subjects.length,teachers:state.teachers.length,enrollments:state.enrollments.length,exams:state.exams.length,upcomingExams:upcoming,results:state.results.length,timetableClasses:state.timetable.length},
   attendanceToday:{present:values.filter(v=>v==="Present").length,absent:values.filter(v=>v==="Absent").length,late:values.filter(v=>v==="Late").length,notMarked:Math.max(0,active-values.length)},
   fees:{billed,paid:collected,outstanding:Math.max(0,billed-collected),records:state.fees.length},
-  courseBreakdown:courses.map(c=>({course:c.name,students:students.filter(s=>s.courseId===c.id).length,subjects:state.subjects.filter(s=>s.course_id===c.id).length}))
+  courseBreakdown:courses.map(c=>({course:c.name,students:currentStudents.filter(s=>s.courseId===c.id).length,subjects:state.subjects.filter(s=>s.course_id===c.id).length})),
+  academicSession:activeAcademicSession?activeAcademicSession.session_type+" "+activeAcademicSession.academic_year:"",calendarEvents:state.calendar.length
  };
 };
 window.loadAcademicModules=loadAcademicModules;
