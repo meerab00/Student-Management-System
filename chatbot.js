@@ -64,7 +64,7 @@
       return `Fee summary: Rs ${Number(fees.billed||0).toLocaleString("en-PK")} billed, Rs ${Number(fees.paid||0).toLocaleString("en-PK")} paid, and Rs ${Number(fees.outstanding||0).toLocaleString("en-PK")} outstanding across ${fees.records||0} fee records.`;
     }
     if (/course.*student|students.*course|course wise/.test(s) && Array.isArray(context.courseBreakdown)) {
-      return context.courseBreakdown.map(x=>`${x.course}: ${x.students} students and ${x.subjects} subjects`).join("\\n") || "No course records are available.";
+      return context.courseBreakdown.map(x=>`${x.course}: ${x.students} students and ${x.subjects} subjects`).join("\n") || "No course records are available.";
     }
     if (/dashboard.*summary|system.*summary|overall.*summary/.test(s) && totals.students !== undefined) {
       return `Current CampusDesk summary: ${totals.students} students, ${totals.courses} courses, ${totals.subjects} subjects, ${totals.teachers} teachers, ${totals.enrollments} enrollments, ${totals.exams} exams, ${totals.results} results and Rs ${Number(fees.outstanding||0).toLocaleString("en-PK")} outstanding fees.`;
