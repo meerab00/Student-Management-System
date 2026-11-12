@@ -3,7 +3,7 @@ const SUPABASE_URL = "https://nmtgfdjxgjxxdxibiavv.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_ZxDemHTHOicSps8_LYRoyA_q56R5k-z";
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let currentUser = null;
-let institutionName = "BZU CASPAM Department";
+let institutionName = "Student Management System";
 let academicSessions = [];
 let activeAcademicSession = null;
 let students = [], courses = [], attendance = {};
@@ -41,7 +41,7 @@ async function selectAcademicSession(id){
 }
 function showAuth(message=""){ $("authScreen").hidden=false;$("appShell").hidden=true;if(message) $("authMessage").textContent=message; }
 function showApp(){ $("authScreen").hidden=true;$("appShell").hidden=false;$("connectionLabel").textContent="Supabase connected";$("profileEmail").textContent=currentUser?.email||"Administrator"; }
-function setInstitutionName(name){institutionName=String(name||"BZU CASPAM Department").trim()||"BZU CASPAM Department";$("institutionNameLabel").textContent=institutionName;$("institutionNameInput").value=institutionName;}
+function setInstitutionName(name){institutionName=String(name||"Student Management System").trim()||"Student Management System";$("institutionNameLabel").textContent=institutionName;$("institutionNameInput").value=institutionName;}
 async function loadData(){
  await loadAcademicSessions();
  const [c,s,a]=await Promise.all([
