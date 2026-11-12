@@ -83,7 +83,7 @@ Student-Management-System/
 
 ## Public department portal
 - `public.html` is the public read-only department portal.
-- Public data is returned only by the `campusdesk_public_view()` RPC. It exposes sessions, courses, subjects, teacher names/specializations, timetable and calendar titles/dates.
+- Public access uses row-level security and column-level SELECT grants for sessions, courses, subjects, teacher names/specializations, timetable and calendar titles/dates only.
 - Student profiles, student IDs, contact details, attendance, individual results and fee records remain private behind the existing authenticated owner-only RLS policies.
 - Apply `supabase/public-view-schema.sql` to a Supabase project to create the restricted public read RPC.
 - Administrators continue to use `index.html` to sign in and manage records.
