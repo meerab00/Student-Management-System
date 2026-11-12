@@ -109,7 +109,13 @@ function exportStudentsPDF(){
  .map(s=>[s.studentNumber,s.name,s.email,courseName(s.courseId),s.phone,s.active?"Active":"Inactive"]);
  printCampusDeskReport("Student Records",["Student ID","Student Name","Email","Course","Phone","Status"],rows,"Student records matching the current search and course filter.");
 }
-function exportStudentPDF(studentId){\n const s=students.find(x=>x.id===studentId);\n if(!s)return toast("Student record not found.");\n const fields=[["Student name",s.name],["Student ID",s.studentNumber],["Date of birth",s.dateOfBirth],["Gender",s.gender],["Course",courseName(s.courseId)],["Email",s.email],["Phone number",s.phone],["Father name",s.fatherName],["Father CNIC",s.fatherCnic],["Mother name",s.motherName],["Mother CNIC",s.motherCnic],["Parent / guardian phone",s.guardianPhone],["Address",s.address],["Admission date",s.admissionDate],["Status",s.active?"Active":"Inactive"]];\n printCampusDeskReport("Student Profile — "+s.name,["Information","Details"],fields,"Individual student profile. Keep this document confidential because it may contain personal information.");\n}\nfunction exportAttendancePDF(){
+function exportStudentPDF(studentId){
+ const s=students.find(x=>x.id===studentId);
+ if(!s)return toast("Student record not found.");
+ const fields=[["Student name",s.name],["Student ID",s.studentNumber],["Date of birth",s.dateOfBirth],["Gender",s.gender],["Course",courseName(s.courseId)],["Email",s.email],["Phone number",s.phone],["Father name",s.fatherName],["Father CNIC",s.fatherCnic],["Mother name",s.motherName],["Mother CNIC",s.motherCnic],["Parent / guardian phone",s.guardianPhone],["Address",s.address],["Admission date",s.admissionDate],["Status",s.active?"Active":"Inactive"]];
+ printCampusDeskReport("Student Profile — "+s.name,["Information","Details"],fields,"Individual student profile. Keep this document confidential because it may contain personal information.");
+}
+function exportAttendancePDF(){
  const date=$("attendanceDate").value||today(),records=attendance[date]||{},filter=$("attendanceCourseFilter").value||"all";
  const rows=students.filter(s=>s.active&&(filter==="all"||s.courseId===filter)).map(s=>[s.studentNumber,s.name,courseName(s.courseId),records[s.id]||"Not marked"]);
  printCampusDeskReport("Attendance Report",["Student ID","Student Name","Course","Status"],rows,"Attendance date: "+date);
@@ -154,7 +160,8 @@ document.addEventListener("click",async e=>{
  }
  if(action?.dataset.action==="view-course-subjects"){showPage("subjects");}
  const edit=e.target.closest("[data-edit]");if(edit){const s=students.find(x=>x.id===edit.dataset.edit);if(s)openStudentModal(s)}
- const viewStudent=e.target.closest("[data-view-student]");if(viewStudent){const s=students.find(x=>x.id===viewStudent.dataset.viewStudent);if(s)showStudentDetails(s)}\n const studentPdf=e.target.closest("[data-student-pdf]");if(studentPdf)exportStudentPDF(studentPdf.dataset.studentPdf);
+ const viewStudent=e.target.closest("[data-view-student]");if(viewStudent){const s=students.find(x=>x.id===viewStudent.dataset.viewStudent);if(s)showStudentDetails(s)}
+ const studentPdf=e.target.closest("[data-student-pdf]");if(studentPdf)exportStudentPDF(studentPdf.dataset.studentPdf);
  const editCourse=e.target.closest("[data-edit-course]");if(editCourse){const course=courses.find(x=>x.id===editCourse.dataset.editCourse);if(course)openCourseModal(course)}
  const deleteCourse=e.target.closest("[data-delete-course]");if(deleteCourse){const course=courses.find(x=>x.id===deleteCourse.dataset.deleteCourse);if(course&&confirm("Delete "+course.name+"? Existing students will remain, but their course assignment will be cleared.")){const result=await db.from("courses").delete().eq("id",course.id);if(result.error)return toast(result.error.message);await loadData();toast("Course deleted.")}}
  const del=e.target.closest("[data-delete]");if(del){const s=students.find(x=>x.id===del.dataset.delete);if(s&&confirm("Delete "+s.name+"? This cannot be undone.")){const {error}=await db.from("students").delete().eq("id",s.id);if(error)return toast(error.message);await loadData();toast("Student deleted.")}}
