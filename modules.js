@@ -1,7 +1,7 @@
 /* CampusDesk academic modules: subjects, teachers, exams, results, fees and timetable */
 (() => {
   const $m = id => document.getElementById(id);
-  const state = { subjects:[], enrollments:[], teachers:[], exams:[], results:[], fees:[], timetable:[] };
+  const state = { subjects:[], enrollments:[], teachers:[], exams:[], results:[], fees:[], timetable:[], calendar:[] };
   const configs = {
     subjects:{title:"Subject",table:"subjects",fields:[
       {key:"name",label:"Subject name",required:true},{key:"code",label:"Subject code",required:true},
@@ -30,6 +30,9 @@
       {key:"amount",label:"Total amount (PKR)",type:"number",required:true},
       {key:"paid_amount",label:"Amount paid (PKR)",type:"number",default:"0"},
       {key:"due_date",label:"Due date",type:"date"},{key:"notes",label:"Notes"}]},
+    calendar:{title:"Calendar event",table:"academic_calendar_events",fields:[
+      {key:"event_type",label:"Event type",type:"select",options:[["Semester Start","Semester Start"],["Semester End","Semester End"],["Midterm","Midterm"],["Final Exam","Final Exam"],["Holiday","Holiday"],["Vacation","Vacation"],["Department Event","Department Event"],["Other","Other"]],required:true},
+      {key:"title",label:"Event title",required:true},{key:"start_date",label:"Start date",type:"date",required:true},{key:"end_date",label:"End date",type:"date"},{key:"description",label:"Description"}]},
     timetable:{title:"Timetable class",table:"timetable",fields:[
       {key:"course_id",label:"Course",type:"select",source:"courses",required:true},
       {key:"subject_id",label:"Subject",type:"select",source:"subjects",required:true},
@@ -48,9 +51,23 @@
   const examLabel = id => state.exams.find(x=>x.id===id)?.title || "—";
   const money = value => "Rs " + Number(value||0).toLocaleString("en-PK");
   async function loadAcademicModules(){
-    const tables = ["subjects","enrollments","teachers","exams","results","fee_records","timetable"];
-    const responses = await Promise.all(tables.map(table=>db.from(table).select("*").eq("user_id",currentUser.id)));
-    responses.forEach((r,i)=>{if(r.error)throw r.error;state[["subjects","enrollments","teachers","exams","results","fees","timetable"][i]]=r.data||[];});
+    const tables = ["subjects","enrollments","teachers","exams","results","fee_records","timetable","academic_calendar_events"];
+    const sessionTables = new Set(["enrollments","exams","fee_records","timetable","academic_calendar_events"]);
+    const responses = await Promise.all(tables.map(table=>{
+      let query=db.from(table).select("*").eq("user_id",currentUser.id);
+      if(sessionTables.has(table))query=query.eq("session_id",activeAcademicSession.id);
+      return query;
+    }));
+    responses.forEach(r=>{if(r.error)throw r.error;});
+    state.subjects=responses[0].data||[];
+    state.enrollments=responses[1].data||[];
+    state.teachers=responses[2].data||[];
+    state.exams=responses[3].data||[];
+    state.results=(responses[4].data||[]).filter(x=>state.exams.some(exam=>exam.id===x.exam_id));
+    state.fees=responses[5].data||[];
+    state.timetable=responses[6].data||[];
+    state.calendar=responses[7].data||[];
+    window.getSessionStudents=()=>students.filter(student=>state.enrollments.some(enrollment=>enrollment.student_id===student.id&&enrollment.status!=="Withdrawn"));
     renderModules();
   }
   function renderModules(){
@@ -83,6 +100,7 @@
     if($m("statPendingFees"))$m("statPendingFees").textContent=money(pending);
     if($m("statExams"))$m("statExams").textContent=upcoming;
     if($m("academicSnapshot"))$m("academicSnapshot").innerHTML=`<div><span>Teachers</span><b>${state.teachers.length}</b></div><div><span>Subjects</span><b>${state.subjects.length}</b></div><div><span>Exams scheduled</span><b>${upcoming}</b></div><div><span>Outstanding fees</span><b>${money(pending)}</b></div><div><span>Results recorded</span><b>${state.results.length}</b></div><div><span>Course enrollments</span><b>${state.enrollments.length}</b></div>`;
+    if($m("calendarTable"))$m("calendarTable").innerHTML=state.calendar.slice().sort((a,b)=>a.start_date.localeCompare(b.start_date)).map(x=>`<tr><td><b>${escape(x.title)}</b></td><td>${escape(x.event_type)}</td><td>${escape(x.start_date)}</td><td>${escape(x.end_date||"—")}</td><td>${escape(x.description||"—")}</td><td><button class="action-btn" data-module-edit="calendar" data-id="${x.id}">Edit</button><button class="action-btn delete" data-module-delete="calendar" data-id="${x.id}">Delete</button></td></tr>`).join("")||'<tr><td colspan="6" class="empty-state">No calendar events added for this session.</td></tr>';
   }
   function sourceOptions(field){
     let rows = field.source==="courses" ? courses : field.source==="students" ? students : field.source==="subjects" ? state.subjects : field.source==="teachers" ? state.teachers : state.exams;
@@ -114,6 +132,7 @@
     if(type==="fees"){record.amount=Number(record.amount);record.paid_amount=Number(record.paid_amount||0);if(record.paid_amount>record.amount)return toast("Paid amount cannot exceed total fee.");record.status=record.paid_amount===0?"Pending":record.paid_amount>=record.amount?"Paid":"Partial";record.paid_on=record.paid_amount>0?new Date().toISOString().slice(0,10):null;}
     if(type==="timetable"&&record.end_time<=record.start_time)return toast("End time must be after start time.");
     if((type==="exams"||type==="timetable")&&record.subject_id){const subject=state.subjects.find(x=>x.id===record.subject_id);if(!subject||subject.course_id!==record.course_id)return toast("Choose a subject that belongs to the selected course.");}
+    if(["enrollments","exams","fees","timetable","calendar"].includes(type))record.session_id=activeAcademicSession.id;
     const query=editingId?db.from(config.table).update(record).eq("id",editingId).eq("user_id",currentUser.id):db.from(config.table).insert(record);
     const {error}=await query;if(error)return toast(error.message);
     closeModuleForm();await loadAcademicModules();toast(config.title+" saved successfully.");
