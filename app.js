@@ -3,7 +3,9 @@ const SUPABASE_URL = "https://nmtgfdjxgjxxdxibiavv.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_ZxDemHTHOicSps8_LYRoyA_q56R5k-z";
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let currentUser = null;
-let institutionName = "Your institution";
+let institutionName = "BZU CASPAM Department";
+let academicSessions = [];
+let activeAcademicSession = null;
 let students = [], courses = [], attendance = {};
 const $ = id => document.getElementById(id);
 const today = () => { const d=new Date(); const local=new Date(d.getTime()-d.getTimezoneOffset()*60000); return local.toISOString().slice(0,10); };
@@ -11,17 +13,42 @@ function escapeHTML(value){return String(value??"").replace(/[&<>"']/g,c=>({"&":
 function toast(message){const el=$("toast");el.textContent=message;el.classList.add("show");setTimeout(()=>el.classList.remove("show"),2600)}
 function initials(name){return String(name||"?").split(/\s+/).slice(0,2).map(x=>x[0]).join("").toUpperCase()}
 function courseName(id){return courses.find(c=>c.id===id)?.name||"Not assigned"}
+function visibleStudents(){return typeof window.getSessionStudents==="function"?window.getSessionStudents():students;}
+async function loadAcademicSessions(){
+ const {data,error}=await db.from("academic_sessions").select("*").eq("user_id",currentUser.id).order("academic_year",{ascending:false}).order("session_type");
+ if(error)throw error;
+ academicSessions=data||[];
+ if(!academicSessions.length)throw new Error("No academic sessions are configured for this account.");
+ if(!activeAcademicSession||!academicSessions.some(s=>s.id===activeAcademicSession.id))activeAcademicSession=academicSessions.find(s=>s.is_active)||academicSessions[0];
+ renderSessionSelector();
+}
+function renderSessionSelector(){
+ const host=$("sessionCards");if(!host)return;
+ $("activeSessionLabel").textContent=activeAcademicSession?activeAcademicSession.session_type+" "+activeAcademicSession.academic_year:"Select a session";
+ host.innerHTML=academicSessions.map(s=>`<button type="button" class="session-card ${activeAcademicSession?.id===s.id?"active":""}" data-academic-session="${s.id}" aria-pressed="${activeAcademicSession?.id===s.id}"><i class="session-dot"></i><b>${escapeHTML(s.session_type)}</b><span>${escapeHTML(s.academic_year)}</span></button>`).join("");
+}
+async function selectAcademicSession(id){
+ const next=academicSessions.find(s=>s.id===id);if(!next||next.id===activeAcademicSession?.id)return;
+ try{
+  const clear=await db.from("academic_sessions").update({is_active:false}).eq("user_id",currentUser.id);if(clear.error)throw clear.error;
+  const chosen=await db.from("academic_sessions").update({is_active:true}).eq("id",id).eq("user_id",currentUser.id);if(chosen.error)throw chosen.error;
+  academicSessions=academicSessions.map(s=>({...s,is_active:s.id===id}));activeAcademicSession=next;renderSessionSelector();await loadData();toast(next.session_type+" "+next.academic_year+" session opened.");
+ }catch(err){toast("Could not switch session: "+err.message);}
+}
 function showAuth(message=""){ $("authScreen").hidden=false;$("appShell").hidden=true;if(message) $("authMessage").textContent=message; }
 function showApp(){ $("authScreen").hidden=true;$("appShell").hidden=false;$("connectionLabel").textContent="Supabase connected";$("profileEmail").textContent=currentUser?.email||"Administrator"; }
 function setInstitutionName(name){institutionName=String(name||"Your institution").trim()||"Your institution";$("institutionNameLabel").textContent=institutionName;$("institutionNameInput").value=institutionName;}
 async function loadData(){
+ await loadAcademicSessions();
  const [c,s,a]=await Promise.all([
   db.from("courses").select("*").eq("user_id",currentUser.id).order("name"),
   db.from("students").select("*").eq("user_id",currentUser.id).order("created_at",{ascending:false}),
-  db.from("attendance").select("*").eq("user_id",currentUser.id).order("attendance_date",{ascending:false})
+  db.from("attendance").select("*").eq("user_id",currentUser.id).eq("session_id",activeAcademicSession.id).order("attendance_date",{ascending:false})
  ]);
  for(const r of [c,s,a]) if(r.error) throw r.error;
- const profile=await db.from("institution_profiles").select("institution_name").eq("user_id",currentUser.id).maybeSingle();if(profile.error)throw profile.error;if(!profile.data){const created=await db.from("institution_profiles").insert({user_id:currentUser.id,institution_name:"Your institution"});if(created.error)throw created.error;setInstitutionName("Your institution");}else setInstitutionName(profile.data.institution_name);
+ const profile=await db.from("institution_profiles").select("institution_name").eq("user_id",currentUser.id).maybeSingle();if(profile.error)throw profile.error;
+ if(!profile.data){const created=await db.from("institution_profiles").insert({user_id:currentUser.id,institution_name:institutionName});if(created.error)throw created.error;setInstitutionName(institutionName);}
+ else setInstitutionName(profile.data.institution_name);
  courses=c.data||[]; students=(s.data||[]).map(x=>({...x,id:x.id,studentNumber:x.student_number,name:x.full_name,email:x.email,phone:x.phone,courseId:x.course_id,active:x.is_active,fatherName:x.father_name||"",fatherCnic:x.father_cnic||"",motherName:x.mother_name||"",motherCnic:x.mother_cnic||"",guardianPhone:x.guardian_phone||"",dateOfBirth:x.date_of_birth||"",gender:x.gender||"",address:x.address||"",admissionDate:x.admission_date||""}));
  attendance={};(a.data||[]).forEach(x=>{attendance[x.attendance_date] ||= {};attendance[x.attendance_date][x.student_id]=x.status});
  if(!courses.length){
@@ -34,34 +61,35 @@ async function loadData(){
   const result=await db.from("courses").insert(defaults);if(result.error)throw result.error;
   const refreshed=await db.from("courses").select("*").eq("user_id",currentUser.id).order("name");if(refreshed.error)throw refreshed.error;courses=refreshed.data||[];
  }
- render();
  if(typeof window.loadAcademicModules==="function") await window.loadAcademicModules();
+ renderSessionSelector();render();
 }
 function studentMarkup(s){return `<div class="student-cell"><span class="mini-avatar">${initials(s.name)}</span><span><b>${escapeHTML(s.name)}</b><small>${escapeHTML(s.email)}</small></span></div>`}
 function renderDashboard(){
- const active=students.filter(s=>s.active).length,inactive=students.length-active;
- const records=attendance[today()]||{};
- const values=Object.values(records);
+ const currentStudents=visibleStudents();
+ const active=currentStudents.filter(s=>s.active).length,inactive=currentStudents.length-active;
+ const records=attendance[today()]||{};const values=Object.values(records);
  const present=values.filter(v=>v==="Present").length,absent=values.filter(v=>v==="Absent").length,late=values.filter(v=>v==="Late").length;
  const marked=present+absent+late,unmarked=Math.max(0,active-marked),rate=marked?Math.round(present/marked*100):0;
- $("statStudents").textContent=students.length;$("statActive").textContent=active;$("statInactiveNote").textContent=inactive+" inactive";
+ $("statStudents").textContent=currentStudents.length;$("statActive").textContent=active;$("statInactiveNote").textContent=inactive+" inactive";
  $("statCourses").textContent=courses.length;$("statPresent").textContent=present;$("statRate").textContent=rate+"%";
  $("statAttendanceNote").textContent=marked+" of "+active+" marked today";
  $("dashPresent").textContent=present;$("dashAbsent").textContent=absent;$("dashLate").textContent=late;$("dashUnmarked").textContent=unmarked;
  $("attendanceRing").style.background="conic-gradient(#239b72 0 "+(active?present/active*100:0)+"%,#e9edf5 "+(active?present/active*100:0)+"% 100%)";
- $("recentStudents").innerHTML=students.slice(0,5).map(s=>`<tr><td>${studentMarkup(s)}</td><td>${escapeHTML(s.studentNumber)}</td><td>${escapeHTML(courseName(s.courseId))}</td><td><span class="pill ${s.active?"":"inactive"}">${s.active?"Active":"Inactive"}</span></td></tr>`).join("")||'<tr><td colspan="4" class="empty-state">No students yet.</td></tr>';
- $("courseDistribution").innerHTML=courses.map(c=>{const count=students.filter(s=>s.courseId===c.id).length;const width=students.length?Math.round(count/students.length*100):0;return `<div class="course-bar-row"><div class="course-bar-label"><span>${escapeHTML(c.name)}</span><b>${count}</b></div><div class="course-bar-track"><i style="width:${width}%"></i></div></div>`}).join("")||'<p class="empty-state">Add courses to see enrolment distribution.</p>';
+ $("recentStudents").innerHTML=currentStudents.slice(0,5).map(s=>`<tr><td>${studentMarkup(s)}</td><td>${escapeHTML(s.studentNumber)}</td><td>${escapeHTML(courseName(s.courseId))}</td><td><span class="pill ${s.active?"":"inactive"}">${s.active?"Active":"Inactive"}</span></td></tr>`).join("")||'<tr><td colspan="4" class="empty-state">No students enrolled in this session yet.</td></tr>';
+ $("courseDistribution").innerHTML=courses.map(c=>{const count=currentStudents.filter(s=>s.courseId===c.id).length;const width=currentStudents.length?Math.round(count/currentStudents.length*100):0;return `<div class="course-bar-row"><div class="course-bar-label"><span>${escapeHTML(c.name)}</span><b>${count}</b></div><div class="course-bar-track"><i style="width:${width}%"></i></div></div>`}).join("")||'<p class="empty-state">Add courses to see enrolment distribution.</p>';
 }
 function populateCourseFilters(){
  for(const id of ["studentCourseFilter","attendanceCourseFilter"]){const el=$(id),selected=el.value||"all";el.innerHTML='<option value="all">All courses</option>'+courses.map(c=>`<option value="${c.id}">${escapeHTML(c.name)}</option>`).join("");el.value=courses.some(c=>c.id===selected)?selected:"all";}
 }
 function renderStudents(){
- const q=($("studentSearch").value||"").toLowerCase();const courseFilter=$("studentCourseFilter").value||"all";const filtered=students.filter(s=>(courseFilter==="all"||s.courseId===courseFilter)&&[s.name,s.studentNumber,s.email,courseName(s.courseId)].join(" ").toLowerCase().includes(q));
+ const currentStudents=visibleStudents(),q=($("studentSearch").value||"").toLowerCase(),courseFilter=$("studentCourseFilter").value||"all";
+ const filtered=currentStudents.filter(s=>(courseFilter==="all"||s.courseId===courseFilter)&&[s.name,s.studentNumber,s.email,courseName(s.courseId)].join(" ").toLowerCase().includes(q));
  $("studentCount").textContent=filtered.length+" student"+(filtered.length===1?"":"s");
- $("studentsTable").innerHTML=filtered.map(s=>`<tr><td>${studentMarkup(s)}</td><td>${escapeHTML(s.studentNumber)}</td><td>${escapeHTML(s.email)}</td><td>${escapeHTML(courseName(s.courseId))}</td><td><span class="pill ${s.active?"":"inactive"}">${s.active?"Active":"Inactive"}</span></td><td><button class="action-btn" data-view-student="${s.id}">View</button><button class="action-btn" data-student-pdf="${s.id}">PDF</button><button class="action-btn" data-edit="${s.id}">Edit</button><button class="action-btn delete" data-delete="${s.id}">Delete</button></td></tr>`).join("")||'<tr><td colspan="6" class="empty-state">No matching students found.</td></tr>';
+ $("studentsTable").innerHTML=filtered.map(s=>`<tr><td>${studentMarkup(s)}</td><td>${escapeHTML(s.studentNumber)}</td><td>${escapeHTML(s.email)}</td><td>${escapeHTML(courseName(s.courseId))}</td><td><span class="pill ${s.active?"":"inactive"}">${s.active?"Active":"Inactive"}</span></td><td><button class="action-btn" data-view-student="${s.id}">View</button><button class="action-btn" data-student-pdf="${s.id}">PDF</button><button class="action-btn" data-edit="${s.id}">Edit</button><button class="action-btn delete" data-delete="${s.id}">Delete</button></td></tr>`).join("")||'<tr><td colspan="6" class="empty-state">No students enrolled in this session.</td></tr>';
 }
 function renderCourses(){
- $("courseGrid").innerHTML=courses.map((c,i)=>'<article class="course-card"><div class="course-symbol">'+["∑","⌘","文","▥","✦"][i%5]+'</div><h3>'+escapeHTML(c.name)+'</h3><p>'+escapeHTML(c.description||"No description added")+'</p><div class="course-meta"><span>'+escapeHTML(c.code)+'</span><span>'+students.filter(s=>s.courseId===c.id).length+' students</span><span>'+(window.getCourseSubjectCount?window.getCourseSubjectCount(c.id):0)+' subjects</span><span>'+escapeHTML(c.duration||"—")+'</span></div><div class="course-actions"><button class="action-btn" data-edit-course="'+c.id+'">Edit</button><button class="action-btn delete" data-delete-course="'+c.id+'">Delete</button></div></article>').join("")||'<div class="empty-state">No courses added yet.</div>';
+ $("courseGrid").innerHTML=courses.map((c,i)=>'<article class="course-card"><div class="course-symbol">'+["∑","⌘","文","▥","✦"][i%5]+'</div><h3>'+escapeHTML(c.name)+'</h3><p>'+escapeHTML(c.description||"No description added")+'</p><div class="course-meta"><span>'+escapeHTML(c.code)+'</span><span>'+visibleStudents().filter(s=>s.courseId===c.id).length+' students</span><span>'+(window.getCourseSubjectCount?window.getCourseSubjectCount(c.id):0)+' subjects</span><span>'+escapeHTML(c.duration||"—")+'</span></div><div class="course-actions"><button class="action-btn" data-edit-course="'+c.id+'">Edit</button><button class="action-btn delete" data-delete-course="'+c.id+'">Delete</button></div></article>').join("")||'<div class="empty-state">No courses added yet.</div>';
 }
 function openCourseModal(course=null){
  $("courseForm").reset();$("editCourseId").value=course?course.id:"";
@@ -72,8 +100,8 @@ function openCourseModal(course=null){
 }
 function closeCourseModal(){$("courseModalBackdrop").classList.remove("open")}
 function renderAttendance(){
- const date=$("attendanceDate").value||today();const records=attendance[date]||{};const courseFilter=$("attendanceCourseFilter").value||"all";
- $("attendanceTable").innerHTML=students.filter(s=>s.active&&(courseFilter==="all"||s.courseId===courseFilter)).map(s=>'<tr><td>'+studentMarkup(s)+'</td><td>'+escapeHTML(s.studentNumber)+'</td><td>'+escapeHTML(courseName(s.courseId))+'</td><td><select class="attendance-select" data-attendance="'+s.id+'"><option value="" '+(!records[s.id]?"selected":"") +'>Select status</option><option value="Present" '+(records[s.id]==="Present"?"selected":"") +'>Present</option><option value="Absent" '+(records[s.id]==="Absent"?"selected":"") +'>Absent</option><option value="Late" '+(records[s.id]==="Late"?"selected":"") +'>Late</option></select></td></tr>').join("")||'<tr><td colspan="4" class="empty-state">Add active students before taking attendance.</td></tr>';
+ const date=$("attendanceDate").value||today(),records=attendance[date]||{},courseFilter=$("attendanceCourseFilter").value||"all";
+ $("attendanceTable").innerHTML=visibleStudents().filter(s=>s.active&&(courseFilter==="all"||s.courseId===courseFilter)).map(s=>'<tr><td>'+studentMarkup(s)+'</td><td>'+escapeHTML(s.studentNumber)+'</td><td>'+escapeHTML(courseName(s.courseId))+'</td><td><select class="attendance-select" data-attendance="'+s.id+'"><option value="" '+(!records[s.id]?"selected":"") +'>Select status</option><option value="Present" '+(records[s.id]==="Present"?"selected":"") +'>Present</option><option value="Absent" '+(records[s.id]==="Absent"?"selected":"") +'>Absent</option><option value="Late" '+(records[s.id]==="Late"?"selected":"") +'>Late</option></select></td></tr>').join("")||'<tr><td colspan="4" class="empty-state">No active students enrolled in this session.</td></tr>';
 }
 function render(){populateCourseFilters();renderDashboard();renderStudents();renderCourses();renderAttendance()}
 function csvCell(value){return '"'+String(value??"").replace(/"/g,'""')+'"'}
@@ -83,14 +111,14 @@ function downloadCSV(filename,headers,rows){
  const url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download=filename;document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url);
 }
 function exportStudents(){
- const courseFilter=$("studentCourseFilter").value||"all";const list=students.filter(s=>courseFilter==="all"||s.courseId===courseFilter);
- downloadCSV("campusdesk-students-"+today()+".csv",["Student ID","Full name","Date of birth","Gender","Email","Student phone","Father name","Father CNIC","Mother name","Mother CNIC","Guardian phone","Address","Course","Admission date","Status"],list.map(s=>[s.studentNumber,s.name,s.dateOfBirth,s.gender,s.email,s.phone,s.fatherName,s.fatherCnic,s.motherName,s.motherCnic,s.guardianPhone,s.address,courseName(s.courseId),s.admissionDate,s.active?"Active":"Inactive"]));
+ const courseFilter=$("studentCourseFilter").value||"all",list=visibleStudents().filter(s=>courseFilter==="all"||s.courseId===courseFilter);
+ downloadCSV("campusdesk-"+activeAcademicSession.session_type.toLowerCase()+"-students-"+today()+".csv",["Student ID","Full name","Date of birth","Gender","Email","Student phone","Father name","Father CNIC","Mother name","Mother CNIC","Guardian phone","Address","Course","Admission date","Status"],list.map(s=>[s.studentNumber,s.name,s.dateOfBirth,s.gender,s.email,s.phone,s.fatherName,s.fatherCnic,s.motherName,s.motherCnic,s.guardianPhone,s.address,courseName(s.courseId),s.admissionDate,s.active?"Active":"Inactive"]));
  toast("Student list exported.");
 }
 function exportAttendance(){
- const date=$("attendanceDate").value||today(),records=attendance[date]||{};
- const courseFilter=$("attendanceCourseFilter").value||"all";const rows=students.filter(s=>s.active&&(courseFilter==="all"||s.courseId===courseFilter)).map(s=>[s.studentNumber,s.name,courseName(s.courseId),records[s.id]||"Not marked"]);
- downloadCSV("campusdesk-attendance-"+date+".csv",["Student ID","Full name","Course","Attendance"],rows);toast("Attendance report exported.");
+ const date=$("attendanceDate").value||today(),records=attendance[date]||{},courseFilter=$("attendanceCourseFilter").value||"all";
+ const rows=visibleStudents().filter(s=>s.active&&(courseFilter==="all"||s.courseId===courseFilter)).map(s=>[s.studentNumber,s.name,courseName(s.courseId),records[s.id]||"Not marked"]);
+ downloadCSV("campusdesk-"+activeAcademicSession.session_type.toLowerCase()+"-attendance-"+date+".csv",["Student ID","Full name","Course","Attendance"],rows);toast("Attendance report exported.");
 }
 function printCampusDeskReport(title, headers, rows, subtitle=""){
  const win=window.open("","_blank");
@@ -151,6 +179,7 @@ $("institutionSettingsBtn").addEventListener("click",()=>{$("institutionNameInpu
 $("closeInstitutionModal").addEventListener("click",closeInstitutionModal);$("cancelInstitutionModal").addEventListener("click",closeInstitutionModal);$("institutionModalBackdrop").addEventListener("click",e=>{if(e.target===$("institutionModalBackdrop"))closeInstitutionModal()});
 $("institutionForm").addEventListener("submit",async e=>{e.preventDefault();const name=$("institutionNameInput").value.trim();if(!name)return toast("Please enter your institution name.");$("saveInstitutionBtn").disabled=true;const {error}=await db.from("institution_profiles").upsert({user_id:currentUser.id,institution_name:name,updated_at:new Date().toISOString()},{onConflict:"user_id"});$("saveInstitutionBtn").disabled=false;if(error)return toast(error.message);setInstitutionName(name);closeInstitutionModal();toast("Institution profile saved.");});
 document.addEventListener("click",async e=>{
+ const session=e.target.closest("[data-academic-session]");if(session){await selectAcademicSession(session.dataset.academicSession);return;}
  const nav=e.target.closest("[data-page]");if(nav)showPage(nav.dataset.page);
  const go=e.target.closest("[data-go]");if(go)showPage(go.dataset.go);
  const action=e.target.closest("[data-action]");
@@ -168,30 +197,19 @@ document.addEventListener("click",async e=>{
 });
 $("studentForm").addEventListener("submit",async e=>{
  e.preventDefault();
- const oldId=$("editStudentId").value;
- const existing=oldId?students.find(s=>s.id===oldId):null;
+ const oldId=$("editStudentId").value,existing=oldId?students.find(s=>s.id===oldId):null;
  const saveButton=$("saveStudentBtn");saveButton.disabled=true;saveButton.textContent="Saving…";
- const record={
-  user_id:currentUser.id,
-  full_name:$("studentName").value.trim(),
-  email:$("studentEmail").value.trim(),
-  phone:$("studentPhone").value.trim(),
-  course_id:$("studentCourse").value||null,
-  father_name:$("fatherName").value.trim(),
-  father_cnic:$("fatherCnic").value.trim(),
-  mother_name:$("motherName").value.trim(),
-  mother_cnic:$("motherCnic").value.trim(),
-  guardian_phone:$("guardianPhone").value.trim(),
-  date_of_birth:$("dateOfBirth").value||null,
-  gender:$("gender").value||null,
-  address:$("studentAddress").value.trim(),
-  admission_date:$("admissionDate").value||null,
-  is_active:existing?existing.active:true
- };
+ const record={user_id:currentUser.id,full_name:$("studentName").value.trim(),email:$("studentEmail").value.trim(),phone:$("studentPhone").value.trim(),course_id:$("studentCourse").value||null,father_name:$("fatherName").value.trim(),father_cnic:$("fatherCnic").value.trim(),mother_name:$("motherName").value.trim(),mother_cnic:$("motherCnic").value.trim(),guardian_phone:$("guardianPhone").value.trim(),date_of_birth:$("dateOfBirth").value||null,gender:$("gender").value||null,address:$("studentAddress").value.trim(),admission_date:$("admissionDate").value||null,is_active:existing?existing.active:true};
  try{
-  const result=oldId?await db.from("students").update(record).eq("id",oldId).eq("user_id",currentUser.id):await db.from("students").insert(record);
-  if(result.error)throw result.error;
-  closeModal();await loadData();toast(oldId?"Student updated.":"Student added successfully.");
+  let studentId=oldId;
+  if(oldId){const result=await db.from("students").update(record).eq("id",oldId).eq("user_id",currentUser.id);if(result.error)throw result.error;}
+  else{const result=await db.from("students").insert(record).select("id").single();if(result.error)throw result.error;studentId=result.data.id;}
+  const {data:existingEnrollment,error:enrollmentLookupError}=await db.from("enrollments").select("id").eq("student_id",studentId).eq("session_id",activeAcademicSession.id).maybeSingle();
+  if(enrollmentLookupError)throw enrollmentLookupError;
+  const enrollment={user_id:currentUser.id,student_id:studentId,course_id:record.course_id,enrolled_on:record.admission_date||today(),status:"Active",session_id:activeAcademicSession.id};
+  const enrollmentResult=existingEnrollment?await db.from("enrollments").update(enrollment).eq("id",existingEnrollment.id):await db.from("enrollments").insert(enrollment);
+  if(enrollmentResult.error)throw enrollmentResult.error;
+  closeModal();await loadData();toast(oldId?"Student updated.":"Student added to "+activeAcademicSession.session_type+" session.");
  }catch(err){toast("Could not save student: "+(err.message||"Please try again."));}
  finally{saveButton.disabled=false;saveButton.textContent="Save student";}
 });
@@ -201,11 +219,11 @@ $("courseForm").addEventListener("submit",async e=>{e.preventDefault();const id=
 $("closeCourseModal").addEventListener("click",closeCourseModal);$("cancelCourseModal").addEventListener("click",closeCourseModal);$("courseModalBackdrop").addEventListener("click",e=>{if(e.target===$("courseModalBackdrop"))closeCourseModal()});
 $("studentSearch").addEventListener("input",renderStudents);$("studentCourseFilter").addEventListener("change",renderStudents);$("attendanceCourseFilter").addEventListener("change",renderAttendance);$("attendanceDate").addEventListener("change",renderAttendance);$("exportStudents").addEventListener("click",exportStudents);$("exportAttendance").addEventListener("click",exportAttendance);$("exportStudentsPdf").addEventListener("click",exportStudentsPDF);$("exportAttendancePdf").addEventListener("click",exportAttendancePDF);
 $("saveAttendance").addEventListener("click",async()=>{
- const date=$("attendanceDate").value||today();const controls=[...document.querySelectorAll("[data-attendance]")];
+ const date=$("attendanceDate").value||today(),controls=[...document.querySelectorAll("[data-attendance]")];
  if(!controls.length)return toast("There are no active students to mark.");
  if(controls.some(el=>!el.value))return toast("Please select an attendance status for every active student.");
- const rows=controls.map(el=>({student_id:el.dataset.attendance,attendance_date:date,status:el.value}));
- const {error}=await db.from("attendance").upsert(rows,{onConflict:"student_id,attendance_date"});if(error)return toast(error.message);
+ const rows=controls.map(el=>({user_id:currentUser.id,student_id:el.dataset.attendance,attendance_date:date,status:el.value,session_id:activeAcademicSession.id}));
+ const {error}=await db.from("attendance").upsert(rows,{onConflict:"student_id,attendance_date,session_id"});if(error)return toast(error.message);
  await loadData();toast("Attendance saved for "+date+".");
 });
 $("menuBtn").addEventListener("click",()=>$("sidebar").classList.toggle("open"));
