@@ -106,7 +106,7 @@
     if($m("calendarTable"))$m("calendarTable").innerHTML=state.calendar.slice().sort((a,b)=>a.start_date.localeCompare(b.start_date)).map(x=>`<tr><td><b>${escape(x.title)}</b></td><td>${escape(x.event_type)}</td><td>${escape(x.start_date)}</td><td>${escape(x.end_date||"—")}</td><td>${escape(x.description||"—")}</td><td><button class="action-btn" data-module-edit="calendar" data-id="${x.id}">Edit</button><button class="action-btn delete" data-module-delete="calendar" data-id="${x.id}">Delete</button></td></tr>`).join("")||'<tr><td colspan="6" class="empty-state">No calendar events added for this session.</td></tr>';
   }
   function sourceOptions(field){
-    let rows = field.source==="courses" ? courses : field.source==="students" ? (activeType==="results"&&window.getSessionStudents?window.getSessionStudents():students) : field.source==="subjects" ? state.subjects : field.source==="teachers" ? state.teachers : state.exams;
+    let rows = field.source==="courses" ? courses : field.source==="students" ? (["results","fees"].includes(activeType)&&window.getSessionStudents?window.getSessionStudents():students) : field.source==="subjects" ? state.subjects : field.source==="teachers" ? state.teachers : state.exams;
     return (field.options||rows.map(x=>[x.id,field.source==="courses"?x.name:field.source==="students"?x.name:field.source==="subjects"?x.name+" ("+x.code+")":field.source==="teachers"?x.full_name:x.title])).map(x=>`<option value="${escape(x[0])}">${escape(x[1])}</option>`).join("");
   }
   function openModuleForm(type,row=null){
