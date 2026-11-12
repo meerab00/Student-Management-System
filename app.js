@@ -37,7 +37,7 @@ async function selectAcademicSession(id){
 }
 function showAuth(message=""){ $("authScreen").hidden=false;$("appShell").hidden=true;if(message) $("authMessage").textContent=message; }
 function showApp(){ $("authScreen").hidden=true;$("appShell").hidden=false;$("connectionLabel").textContent="Supabase connected";$("profileEmail").textContent=currentUser?.email||"Administrator"; }
-function setInstitutionName(name){institutionName=String(name||"Your institution").trim()||"Your institution";$("institutionNameLabel").textContent=institutionName;$("institutionNameInput").value=institutionName;}
+function setInstitutionName(name){institutionName=String(name||"BZU CASPAM Department").trim()||"BZU CASPAM Department";$("institutionNameLabel").textContent=institutionName;$("institutionNameInput").value=institutionName;}
 async function loadData(){
  await loadAcademicSessions();
  const [c,s,a]=await Promise.all([
@@ -86,7 +86,7 @@ function renderStudents(){
  const currentStudents=visibleStudents(),q=($("studentSearch").value||"").toLowerCase(),courseFilter=$("studentCourseFilter").value||"all";
  const filtered=currentStudents.filter(s=>(courseFilter==="all"||s.courseId===courseFilter)&&[s.name,s.studentNumber,s.email,courseName(s.courseId)].join(" ").toLowerCase().includes(q));
  $("studentCount").textContent=filtered.length+" student"+(filtered.length===1?"":"s");
- $("studentsTable").innerHTML=filtered.map(s=>`<tr><td>${studentMarkup(s)}</td><td>${escapeHTML(s.studentNumber)}</td><td>${escapeHTML(s.email)}</td><td>${escapeHTML(courseName(s.courseId))}</td><td><span class="pill ${s.active?"":"inactive"}">${s.active?"Active":"Inactive"}</span></td><td><button class="action-btn" data-view-student="${s.id}">View</button><button class="action-btn" data-student-pdf="${s.id}">PDF</button><button class="action-btn" data-edit="${s.id}">Edit</button><button class="action-btn delete" data-delete="${s.id}">Delete</button></td></tr>`).join("")||'<tr><td colspan="6" class="empty-state">No students enrolled in this session.</td></tr>';
+ $("studentsTable").innerHTML=filtered.map(s=>`<tr><td>${studentMarkup(s)}</td><td>${escapeHTML(s.studentNumber)}</td><td>${escapeHTML(s.email)}</td><td>${escapeHTML(courseName(s.courseId))}</td><td>${s.semester?"Semester "+escapeHTML(s.semester):"—"}</td><td>${escapeHTML(s.section||"—")}</td><td><span class="pill ${s.active?"":"inactive"}">${s.active?"Active":"Inactive"}</span></td><td><button class="action-btn" data-view-student="${s.id}">View</button><button class="action-btn" data-student-pdf="${s.id}">PDF</button><button class="action-btn" data-edit="${s.id}">Edit</button><button class="action-btn delete" data-delete="${s.id}">Delete</button></td></tr>`).join("")||'<tr><td colspan="8" class="empty-state">No students enrolled in this session.</td></tr>';
 }
 function renderCourses(){
  $("courseGrid").innerHTML=courses.map((c,i)=>'<article class="course-card"><div class="course-symbol">'+["∑","⌘","文","▥","✦"][i%5]+'</div><h3>'+escapeHTML(c.name)+'</h3><p>'+escapeHTML(c.description||"No description added")+'</p><div class="course-meta"><span>'+escapeHTML(c.code)+'</span><span>'+visibleStudents().filter(s=>s.courseId===c.id).length+' students</span><span>'+(window.getCourseSubjectCount?window.getCourseSubjectCount(c.id):0)+' subjects</span><span>'+escapeHTML(c.duration||"—")+'</span></div><div class="course-actions"><button class="action-btn" data-edit-course="'+c.id+'">Edit</button><button class="action-btn delete" data-delete-course="'+c.id+'">Delete</button></div></article>').join("")||'<div class="empty-state">No courses added yet.</div>';
@@ -112,13 +112,13 @@ function downloadCSV(filename,headers,rows){
 }
 function exportStudents(){
  const courseFilter=$("studentCourseFilter").value||"all",list=visibleStudents().filter(s=>courseFilter==="all"||s.courseId===courseFilter);
- downloadCSV("campusdesk-"+activeAcademicSession.session_type.toLowerCase()+"-students-"+today()+".csv",["Student ID","Full name","Date of birth","Gender","Email","Student phone","Father name","Father CNIC","Mother name","Mother CNIC","Guardian phone","Address","Course","Admission date","Status"],list.map(s=>[s.studentNumber,s.name,s.dateOfBirth,s.gender,s.email,s.phone,s.fatherName,s.fatherCnic,s.motherName,s.motherCnic,s.guardianPhone,s.address,courseName(s.courseId),s.admissionDate,s.active?"Active":"Inactive"]));
+ downloadCSV("campusdesk-"+activeAcademicSession.session_type.toLowerCase()+"-students-"+today()+".csv",["Student ID","Full name","Semester","Section","Date of birth","Gender","Email","Student phone","Father name","Father CNIC","Mother name","Mother CNIC","Guardian phone","Address","Course","Admission date","Status"],list.map(s=>[s.studentNumber,s.name,s.semester,s.section,s.dateOfBirth,s.gender,s.email,s.phone,s.fatherName,s.fatherCnic,s.motherName,s.motherCnic,s.guardianPhone,s.address,courseName(s.courseId),s.admissionDate,s.active?"Active":"Inactive"]));
  toast("Student list exported.");
 }
 function exportAttendance(){
  const date=$("attendanceDate").value||today(),records=attendance[date]||{},courseFilter=$("attendanceCourseFilter").value||"all";
- const rows=visibleStudents().filter(s=>s.active&&(courseFilter==="all"||s.courseId===courseFilter)).map(s=>[s.studentNumber,s.name,courseName(s.courseId),records[s.id]||"Not marked"]);
- downloadCSV("campusdesk-"+activeAcademicSession.session_type.toLowerCase()+"-attendance-"+date+".csv",["Student ID","Full name","Course","Attendance"],rows);toast("Attendance report exported.");
+ const rows=visibleStudents().filter(s=>s.active&&(courseFilter==="all"||s.courseId===courseFilter)).map(s=>[s.studentNumber,s.name,courseName(s.courseId),s.semester?"Semester "+s.semester:"",s.section||"",records[s.id]||"Not marked"]);
+ downloadCSV("campusdesk-"+activeAcademicSession.session_type.toLowerCase()+"-attendance-"+date+".csv",["Student ID","Full name","Course","Semester","Section","Attendance"],rows);toast("Attendance report exported.");
 }
 function printCampusDeskReport(title, headers, rows, subtitle=""){
  const win=window.open("","_blank");
@@ -152,12 +152,12 @@ function showPage(page){document.querySelectorAll(".page-view").forEach(v=>v.cla
 function openStudentModal(student=null){
  $("studentForm").reset();$("editStudentId").value=student?.id||"";$("modalTitle").textContent=student?"Edit student":"Add student";$("studentId").value=student?student.studentNumber:"";$("studentId").placeholder=student?"Student ID is permanent":"Generated automatically when saved";$("studentId").readOnly=true;
  $("studentCourse").innerHTML=courses.map(c=>`<option value="${c.id}">${escapeHTML(c.name)}</option>`).join("");
- if(student){$("studentName").value=student.name;$("studentId").value=student.studentNumber;$("studentEmail").value=student.email;$("studentPhone").value=student.phone||"";$("studentCourse").value=student.courseId||"";$("fatherName").value=student.fatherName||"";$("fatherCnic").value=student.fatherCnic||"";$("motherName").value=student.motherName||"";$("motherCnic").value=student.motherCnic||"";$("guardianPhone").value=student.guardianPhone||"";$("dateOfBirth").value=student.dateOfBirth||"";$("gender").value=student.gender||"";$("studentAddress").value=student.address||"";$("admissionDate").value=student.admissionDate||"";}
+ if(student){$("studentName").value=student.name;$("studentId").value=student.studentNumber;$("studentEmail").value=student.email;$("studentPhone").value=student.phone||"";$("studentCourse").value=student.courseId||"";$("studentSemester").value=student.semester||"";$("studentSection").value=student.section||"";$("fatherName").value=student.fatherName||"";$("fatherCnic").value=student.fatherCnic||"";$("motherName").value=student.motherName||"";$("motherCnic").value=student.motherCnic||"";$("guardianPhone").value=student.guardianPhone||"";$("dateOfBirth").value=student.dateOfBirth||"";$("gender").value=student.gender||"";$("studentAddress").value=student.address||"";$("admissionDate").value=student.admissionDate||"";}
  $("modalBackdrop").classList.add("open");
 }
 function closeModal(){$("modalBackdrop").classList.remove("open");$("studentId").readOnly=true}
 function showStudentDetails(student){
- const fields=[["Student name",student.name],["Student ID",student.studentNumber],["Date of birth",student.dateOfBirth],["Gender",student.gender],["Subject / Course",courseName(student.courseId)],["Phone number",student.phone],["Gmail address",student.email],["Father name",student.fatherName],["Father CNIC",student.fatherCnic],["Mother name",student.motherName],["Mother CNIC",student.motherCnic],["Parent / guardian phone",student.guardianPhone],["Address",student.address],["Admission date",student.admissionDate]];
+ const fields=[["Student name",student.name],["Student ID",student.studentNumber],["Programme semester",student.semester?"Semester "+student.semester:""],["Section",student.section],["Date of birth",student.dateOfBirth],["Gender",student.gender],["Subject / Course",courseName(student.courseId)],["Phone number",student.phone],["Gmail address",student.email],["Father name",student.fatherName],["Father CNIC",student.fatherCnic],["Mother name",student.motherName],["Mother CNIC",student.motherCnic],["Parent / guardian phone",student.guardianPhone],["Address",student.address],["Admission date",student.admissionDate]];
  $("studentDetailsTitle").textContent=student.name+" — Student details";
  $("studentDetailsContent").innerHTML=fields.map(([label,value])=>'<div class="detail-item"><small>'+escapeHTML(label)+'</small><strong>'+escapeHTML(value||"Not provided")+'</strong></div>').join("");
  $("studentDetailsBackdrop").classList.add("open");
@@ -188,8 +188,8 @@ document.addEventListener("click",async e=>{
   openCourseModal();
  }
  if(action?.dataset.action==="view-course-subjects"){showPage("subjects");}
- const edit=e.target.closest("[data-edit]");if(edit){const s=students.find(x=>x.id===edit.dataset.edit);if(s)openStudentModal(s)}
- const viewStudent=e.target.closest("[data-view-student]");if(viewStudent){const s=students.find(x=>x.id===viewStudent.dataset.viewStudent);if(s)showStudentDetails(s)}
+ const edit=e.target.closest("[data-edit]");if(edit){const s=visibleStudents().find(x=>x.id===edit.dataset.edit);if(s)openStudentModal(s)}
+ const viewStudent=e.target.closest("[data-view-student]");if(viewStudent){const s=visibleStudents().find(x=>x.id===viewStudent.dataset.viewStudent);if(s)showStudentDetails(s)}
  const studentPdf=e.target.closest("[data-student-pdf]");if(studentPdf)exportStudentPDF(studentPdf.dataset.studentPdf);
  const editCourse=e.target.closest("[data-edit-course]");if(editCourse){const course=courses.find(x=>x.id===editCourse.dataset.editCourse);if(course)openCourseModal(course)}
  const deleteCourse=e.target.closest("[data-delete-course]");if(deleteCourse){const course=courses.find(x=>x.id===deleteCourse.dataset.deleteCourse);if(course&&confirm("Delete "+course.name+"? Existing students will remain, but their course assignment will be cleared.")){const result=await db.from("courses").delete().eq("id",course.id);if(result.error)return toast(result.error.message);await loadData();toast("Course deleted.")}}
@@ -206,7 +206,7 @@ $("studentForm").addEventListener("submit",async e=>{
   else{const result=await db.from("students").insert(record).select("id").single();if(result.error)throw result.error;studentId=result.data.id;}
   const {data:existingEnrollment,error:enrollmentLookupError}=await db.from("enrollments").select("id").eq("student_id",studentId).eq("session_id",activeAcademicSession.id).maybeSingle();
   if(enrollmentLookupError)throw enrollmentLookupError;
-  const enrollment={user_id:currentUser.id,student_id:studentId,course_id:record.course_id,enrolled_on:record.admission_date||today(),status:"Active",session_id:activeAcademicSession.id};
+  const enrollment={user_id:currentUser.id,student_id:studentId,course_id:record.course_id,semester:$("studentSemester").value?Number($("studentSemester").value):null,section:$("studentSection").value.trim(),enrolled_on:record.admission_date||today(),status:"Active",session_id:activeAcademicSession.id};
   const enrollmentResult=existingEnrollment?await db.from("enrollments").update(enrollment).eq("id",existingEnrollment.id):await db.from("enrollments").insert(enrollment);
   if(enrollmentResult.error)throw enrollmentResult.error;
   closeModal();await loadData();toast(oldId?"Student updated.":"Student added to "+activeAcademicSession.session_type+" session.");
