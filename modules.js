@@ -127,7 +127,7 @@
  const values=Object.values(records);
  const billed=state.fees.reduce((n,x)=>n+Number(x.amount||0),0);
  const collected=state.fees.reduce((n,x)=>n+Number(x.paid_amount||0),0);
- const upcoming=state.exams.filter(x=>x.exam_date&&x.exam_date>=today()).length;
+ const upcoming=state.exams.filter(x=>!x.exam_date||x.exam_date>=today()).length;
  return {
   asOf:today(),institution:institutionName,
   totals:{students:students.length,activeStudents:active,inactiveStudents:students.length-active,courses:courses.length,subjects:state.subjects.length,teachers:state.teachers.length,enrollments:state.enrollments.length,exams:state.exams.length,upcomingExams:upcoming,results:state.results.length,timetableClasses:state.timetable.length},
