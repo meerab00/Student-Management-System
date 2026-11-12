@@ -133,3 +133,44 @@ create index if not exists timetable_subject_id_idx on public.timetable(subject_
 create index if not exists timetable_teacher_id_idx on public.timetable(teacher_id);
 create index if not exists user_profiles_linked_student_id_idx on public.user_profiles(linked_student_id);
 create index if not exists user_profiles_linked_teacher_id_idx on public.user_profiles(linked_teacher_id);
+
+
+-- Enforce that marks cannot exceed the selected exam's total and that the
+-- student and exam belong to the same account and course.
+create or replace function private.validate_result_record()
+returns trigger
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+declare
+  v_total_marks numeric;
+  v_exam_course uuid;
+  v_student_course uuid;
+begin
+  select e.total_marks, e.course_id
+    into v_total_marks, v_exam_course
+    from public.exams e
+   where e.id = new.exam_id and e.user_id = new.user_id;
+  if not found then
+    raise exception 'The selected exam does not belong to this account.';
+  end if;
+  select s.course_id into v_student_course
+    from public.students s
+   where s.id = new.student_id and s.user_id = new.user_id;
+  if not found then
+    raise exception 'The selected student does not belong to this account.';
+  end if;
+  if v_student_course is distinct from v_exam_course then
+    raise exception 'The student must belong to the course selected for this exam.';
+  end if;
+  if new.obtained_marks < 0 or new.obtained_marks > v_total_marks then
+    raise exception 'Obtained marks must be between 0 and the exam total marks (%).', v_total_marks;
+  end if;
+  return new;
+end;
+$$;
+revoke all on function private.validate_result_record() from public, anon, authenticated;
+drop trigger if exists results_validate_record on public.results;
+create trigger results_validate_record before insert or update on public.results
+for each row execute function private.validate_result_record();
