@@ -95,7 +95,8 @@
     $m("feeBilled").textContent=money(billed);$m("feeCollected").textContent=money(collected);$m("feeOutstanding").textContent=money(due);
     $m("feesTable").innerHTML = state.fees.map(x=>`<tr><td>${escape(studentLabel(x.student_id))}</td><td>${escape(x.fee_title)}</td><td>${money(x.amount)}</td><td>${money(x.paid_amount)}</td><td><b>${money(Number(x.amount)-Number(x.paid_amount))}</b></td><td>${escape(x.due_date||"—")}</td><td><span class="pill ${x.status==="Pending"?"inactive":""}">${escape(x.status)}</span></td></tr>`).join("") || '<tr><td colspan="7" class="empty-state">No fee records yet.</td></tr>';
     const days=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
-    $m("timetableTable").innerHTML = state.timetable.slice().sort((a,b)=>a.weekday-b.weekday||a.start_time.localeCompare(b.start_time)).map(x=>`<tr><td>${days[x.weekday-1]||"—"}</td><td>${escape(String(x.start_time).slice(0,5))}–${escape(String(x.end_time).slice(0,5))}</td><td>${escape(courseLabel(x.course_id))}</td><td>${escape(x.semester?"Semester "+x.semester:"—")}</td><td>${escape(x.section||"—")}</td><td>${escape(subjectLabel(x.subject_id))}</td><td>${escape(teacherLabel(x.teacher_id))}</td><td>${escape(x.room||"—")}</td></tr>`).join("") || '<tr><td colspan="8" class="empty-state">No classes scheduled yet.</td></tr>';
+    const timetableCourse=$m("timetableCourseFilter")?.value||"all",timetableSemester=$m("timetableSemesterFilter")?.value||"all",timetableSection=($m("timetableSectionFilter")?.value||"").trim().toLowerCase();
+    $m("timetableTable").innerHTML = state.timetable.filter(x=>(timetableCourse==="all"||x.course_id===timetableCourse)&&(timetableSemester==="all"||String(x.semester||"")===timetableSemester)&&(!timetableSection||String(x.section||"").toLowerCase().includes(timetableSection))).slice().sort((a,b)=>a.weekday-b.weekday||a.start_time.localeCompare(b.start_time)).map(x=>`<tr><td>${days[x.weekday-1]||"—"}</td><td>${escape(String(x.start_time).slice(0,5))}–${escape(String(x.end_time).slice(0,5))}</td><td>${escape(courseLabel(x.course_id))}</td><td>${escape(x.semester?"Semester "+x.semester:"—")}</td><td>${escape(x.section||"—")}</td><td>${escape(subjectLabel(x.subject_id))}</td><td>${escape(teacherLabel(x.teacher_id))}</td><td>${escape(x.room||"—")}</td></tr>`).join("") || '<tr><td colspan="8" class="empty-state">No classes scheduled yet.</td></tr>';
     const pending = state.fees.reduce((n,x)=>n+Math.max(0,Number(x.amount)-Number(x.paid_amount)),0);
     const upcoming = state.exams.filter(x=>!x.exam_date||x.exam_date>=new Date().toISOString().slice(0,10)).length;
     if($m("statTeachers"))$m("statTeachers").textContent=state.teachers.length;
@@ -127,6 +128,9 @@
     const del=e.target.closest("[data-module-delete]");if(del){const type=del.dataset.moduleDelete,row=state[type].find(x=>x.id===del.dataset.id);if(!row||!confirm("Delete this "+configs[type].title.toLowerCase()+" record?"))return;const {error}=await db.from(configs[type].table).delete().eq("id",row.id).eq("user_id",currentUser.id);if(error)return toast(error.message);await loadAcademicModules();toast("Record deleted.");}
   });
   $m("subjectCourseFilter").addEventListener("change",renderModules);
+  $m("timetableCourseFilter").addEventListener("change",renderModules);
+  $m("timetableSemesterFilter").addEventListener("change",renderModules);
+  $m("timetableSectionFilter").addEventListener("input",renderModules);
   $m("moduleForm").addEventListener("submit",async e=>{
     e.preventDefault();if(!activeType)return;const type=activeType,config=configs[type],form=new FormData(e.currentTarget),record={user_id:currentUser.id};
     config.fields.forEach(f=>{const v=form.get(f.key);record[f.key]=v===""?null:v;});
