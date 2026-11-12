@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="CASPAM Department Management System for academic sessions, students, classes, exams and attendance.">
-  <title>CampusDesk | CASPAM Department Management System</title>
+  <meta name="description" content="Student Management System for academic sessions, students, classes, exams and attendance.">
+  <title>CampusDesk | Student Management System</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
@@ -48,7 +48,7 @@
         <button class="nav-link" data-page="calendar"><span>◷</span> Academic Calendar</button>
       </nav>
       <div class="sidebar-bottom">
-        <div class="help-card"><div class="help-icon">✦</div><strong id="institutionNameLabel">BZU CASPAM Department</strong><p>Manage CASPAM academic sessions and department records.</p><button class="text-button" id="institutionSettingsBtn" type="button">Department settings →</button></div>
+        <div class="help-card"><div class="help-icon">✦</div><strong id="institutionNameLabel">Student Management System</strong><p>Manage Student Management System academic sessions and department records.</p><button class="text-button" id="institutionSettingsBtn" type="button">Department settings →</button></div>
         <div class="profile"><div class="avatar">AD</div><div><strong>Administrator</strong><small id="profileEmail">Administrator</small></div><button id="logoutBtn" title="Sign out">↗</button></div>
       </div>
     </aside>
@@ -63,7 +63,7 @@
       <section class="page-content">
         <div class="session-switcher"><div class="session-switcher-heading"><div><div class="eyebrow">ACADEMIC SESSION</div><strong id="activeSessionLabel">Spring 2026</strong></div><small>Choose a session to view its dashboard and records</small></div><div id="sessionCards" class="session-cards" aria-label="Academic sessions"></div></div>
         <section class="page-view active" id="dashboardPage">
-          <div class="welcome-row"><div><div class="eyebrow">DEPARTMENT OVERVIEW</div><h1>CASPAM Department Dashboard <span>✦</span></h1><p class="muted">Here’s what’s happening in the selected academic session.</p></div><div class="date-chip" id="todayDate"></div></div>
+          <div class="welcome-row"><div><div class="eyebrow">DEPARTMENT OVERVIEW</div><h1>Student Management System Dashboard <span>✦</span></h1><p class="muted">Here’s what’s happening in the selected academic session.</p></div><div class="date-chip" id="todayDate"></div></div>
           <div class="demo-ribbon"><span class="demo-dot"></span> DEMO WORKSPACE · Sample records are labelled DEMO</div>
           <div class="stats-grid">
             <article class="stat-card"><div class="stat-top"><span>Session students</span><span class="stat-icon purple">♙</span></div><strong id="statStudents">0</strong><small>Students enrolled in this session</small></article>
@@ -90,7 +90,7 @@
         </section>
 
         <section class="page-view" id="coursesPage">
-          <div class="page-heading"><div><div class="eyebrow">ACADEMICS</div><h1>Courses</h1><p class="muted">Programmes offered by the CASPAM department.</p></div><button class="primary-btn" data-action="add-course">＋ Add course</button></div>
+          <div class="page-heading"><div><div class="eyebrow">ACADEMICS</div><h1>Courses</h1><p class="muted">Programmes offered by the Student Management System.</p></div><button class="primary-btn" data-action="add-course">＋ Add course</button></div>
           <div class="course-grid" id="courseGrid"></div>
         </section>
 
@@ -110,7 +110,7 @@
           <div class="panel"><div class="toolbar"><div><h2 class="toolbar-title">Student attendance</h2><p class="muted small">Choose a programme, semester and section to mark attendance for one class.</p></div><div class="toolbar-actions"><label class="filter-label" for="attendanceCourseFilter">Course</label><select class="course-filter" id="attendanceCourseFilter"><option value="all">All programmes</option></select><label class="filter-label" for="attendanceSemesterFilter">Semester</label><select class="course-filter" id="attendanceSemesterFilter"><option value="all">All semesters</option><option value="1">Semester 1</option><option value="2">Semester 2</option><option value="3">Semester 3</option><option value="4">Semester 4</option><option value="5">Semester 5</option><option value="6">Semester 6</option><option value="7">Semester 7</option><option value="8">Semester 8</option></select><label class="filter-label" for="attendanceSectionFilter">Section</label><input id="attendanceSectionFilter" class="course-filter" placeholder="All sections"><button class="secondary-btn" id="exportAttendance">↓ Export CSV</button><button class="secondary-btn" id="exportAttendancePdf">Print / Save PDF</button><button class="primary-btn" id="saveAttendance">Save attendance</button></div></div><div class="table-wrap"><table><thead><tr><th>STUDENT</th><th>STUDENT ID</th><th>COURSE</th><th>SEMESTER</th><th>SECTION</th><th>ATTENDANCE</th></tr></thead><tbody id="attendanceTable"></tbody></table></div></div>
         </section>
       </section>
-      <footer>© <span id="year"></span> CampusDesk <span>·</span> CASPAM Department Management System</footer>
+      <footer>© <span id="year"></span> CampusDesk <span>·</span> Student Management System</footer>
     </main>
   </div>
 
