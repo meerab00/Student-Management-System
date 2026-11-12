@@ -80,7 +80,7 @@ function renderDashboard(){
  $("courseDistribution").innerHTML=courses.map(c=>{const count=currentStudents.filter(s=>s.courseId===c.id).length;const width=currentStudents.length?Math.round(count/currentStudents.length*100):0;return `<div class="course-bar-row"><div class="course-bar-label"><span>${escapeHTML(c.name)}</span><b>${count}</b></div><div class="course-bar-track"><i style="width:${width}%"></i></div></div>`}).join("")||'<p class="empty-state">Add courses to see enrolment distribution.</p>';
 }
 function populateCourseFilters(){
- for(const id of ["studentCourseFilter","attendanceCourseFilter"]){const el=$(id),selected=el.value||"all";el.innerHTML='<option value="all">All courses</option>'+courses.map(c=>`<option value="${c.id}">${escapeHTML(c.name)}</option>`).join("");el.value=courses.some(c=>c.id===selected)?selected:"all";}
+ for(const id of ["studentCourseFilter","attendanceCourseFilter","timetableCourseFilter"]){const el=$(id),selected=el.value||"all";el.innerHTML='<option value="all">All courses</option>'+courses.map(c=>`<option value="${c.id}">${escapeHTML(c.name)}</option>`).join("");el.value=courses.some(c=>c.id===selected)?selected:"all";}
 }
 function renderStudents(){
  const currentStudents=visibleStudents(),q=($("studentSearch").value||"").toLowerCase(),courseFilter=$("studentCourseFilter").value||"all";
