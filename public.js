@@ -17,4 +17,24 @@ function renderAll(){renderSessions();renderOverview();renderSections();renderTi
 document.addEventListener("click",e=>{const b=e.target.closest("[data-session]");if(!b)return;selectedSession=b.dataset.session;renderAll()});
 $p("semesterFilter").addEventListener("change",renderTimetable);$p("sectionFilter").addEventListener("change",renderTimetable);
 $p("year").textContent=new Date().getFullYear();
-(async()=>{try{const {data,error}=await publicDb.rpc("campusdesk_public_view");if(error)throw error;payload=data||{};$p("institutionName").textContent=payload.institution||"CASPAM Department";selectedSession=payload.sessions?.find(s=>s.is_active)?.id||payload.sessions?.[0]?.id||null;renderAll();renderCourses();renderTeachers()}catch(err){$p("publicError").hidden=false;$p("publicError").textContent="Public information could not be loaded. Please refresh or contact the administrator.";console.error(err)}})();
+(async()=>{try{
+ const queries=await Promise.all([
+  publicDb.from("institution_profiles").select("institution_name").maybeSingle(),
+  publicDb.from("academic_sessions").select("id,session_type,academic_year,start_date,end_date,is_active").order("academic_year",{ascending:false}),
+  publicDb.from("courses").select("id,name,code,description,duration").order("name"),
+  publicDb.from("subjects").select("id,course_id,name,code,semester").order("semester"),
+  publicDb.from("teachers").select("id,full_name,specialization").order("full_name"),
+  publicDb.from("timetable").select("id,course_id,subject_id,teacher_id,weekday,start_time,end_time,room,session_id,semester,section").order("weekday"),
+  publicDb.from("academic_calendar_events").select("id,session_id,event_type,title,start_date,end_date").order("start_date")
+ ]);
+ for(const q of queries)if(q.error)throw q.error;
+ const [profile,sessions,courses,subjects,teachers,timetable,calendar]=queries.map(q=>q.data);
+ payload={institution:profile?.institution_name||"CASPAM Department",sessions:sessions||[],courses:courses||[],subjects:subjects||[],teachers:teachers||[],timetable:timetable||[],calendar:calendar||[]};
+ const courseById=Object.fromEntries(payload.courses.map(x=>[x.id,x.name]));
+ const subjectById=Object.fromEntries(payload.subjects.map(x=>[x.id,x.name]));
+ const teacherById=Object.fromEntries(payload.teachers.map(x=>[x.id,x.full_name]));
+ payload.timetable=payload.timetable.map(t=>({...t,course_name:courseById[t.course_id],subject_name:subjectById[t.subject_id],teacher_name:teacherById[t.teacher_id]}));
+ $p("institutionName").textContent=payload.institution;
+ selectedSession=payload.sessions.find(s=>s.is_active)?.id||payload.sessions[0]?.id||null;
+ renderAll();renderCourses();renderTeachers();
+}catch(err){$p("publicError").hidden=false;$p("publicError").textContent="Public information could not be loaded. Please refresh or contact the administrator.";console.error(err)}})();
