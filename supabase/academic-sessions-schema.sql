@@ -108,6 +108,7 @@ alter table public.exams add constraint exams_semester_range_check check (semest
 
 create index if not exists academic_sessions_user_year_idx on public.academic_sessions(user_id, academic_year);
 create index if not exists academic_calendar_events_session_date_idx on public.academic_calendar_events(session_id, start_date);
+create index if not exists academic_calendar_events_user_id_idx on public.academic_calendar_events(user_id);
 create index if not exists enrollments_session_id_idx on public.enrollments(session_id);
 create index if not exists attendance_session_date_idx on public.attendance(session_id, attendance_date);
 create index if not exists exams_session_id_idx on public.exams(session_id);
