@@ -110,7 +110,7 @@
     <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal-head"><div><div class="eyebrow">STUDENT RECORD</div><h2 id="modalTitle">Add student</h2></div><button class="icon-btn" id="closeModal" aria-label="Close">×</button></div>
       <form id="studentForm"><input type="hidden" id="editStudentId"><div class="form-grid">
         <label>Student name<input id="studentName" required maxlength="120" placeholder="e.g. Ayesha Khan"></label>
-        <label>Student ID<input id="studentId" required maxlength="40" placeholder="e.g. STU-1001"></label>
+        <label>Student ID (auto-generated)<input id="studentId" maxlength="40" placeholder="Generated automatically when saved" readonly></label>
         <label>Subject / Course<select id="studentCourse" required></select></label>
         <label>Phone number<input id="studentPhone" type="tel" placeholder="03XX-XXXXXXX"></label>
         <label class="full-field">Gmail address<input id="studentEmail" type="email" required placeholder="student@gmail.com"></label>
