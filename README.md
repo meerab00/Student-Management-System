@@ -10,7 +10,7 @@ CampusDesk is a responsive, browser-based Student Management System. It uses Sup
 - Add, edit and delete courses and subjects
 - Manage student course enrollments and teacher records
 - Mark attendance and export student lists and date-wise attendance reports as CSV or print/save them as PDF
-- Manage exams, student results, fee records and class timetable
+- Manage exams and editable student results, fee records and class timetable
 - Supabase Row Level Security: each signed-in account can access only its own records
 - Responsive layout for desktop and mobile browsers
 - Floating CampusDesk Assistant with AI-powered guidance, live non-sensitive dashboard summaries, and built-in FAQ fallback
@@ -68,5 +68,9 @@ Student-Management-System/
 ├── chatbot.css
 ├── README.md
 └── supabase/
-    └── schema.sql
+    ├── schema.sql
+    ├── modules-schema.sql
+    └── functions/
+        └── campusdesk-assistant/
+            └── index.ts
 ```
