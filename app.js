@@ -100,8 +100,9 @@ function openCourseModal(course=null){
 }
 function closeCourseModal(){$("courseModalBackdrop").classList.remove("open")}
 function renderAttendance(){
- const date=$("attendanceDate").value||today(),records=attendance[date]||{},courseFilter=$("attendanceCourseFilter").value||"all";
- $("attendanceTable").innerHTML=visibleStudents().filter(s=>s.active&&(courseFilter==="all"||s.courseId===courseFilter)).map(s=>'<tr><td>'+studentMarkup(s)+'</td><td>'+escapeHTML(s.studentNumber)+'</td><td>'+escapeHTML(courseName(s.courseId))+'</td><td><select class="attendance-select" data-attendance="'+s.id+'"><option value="" '+(!records[s.id]?"selected":"") +'>Select status</option><option value="Present" '+(records[s.id]==="Present"?"selected":"") +'>Present</option><option value="Absent" '+(records[s.id]==="Absent"?"selected":"") +'>Absent</option><option value="Late" '+(records[s.id]==="Late"?"selected":"") +'>Late</option></select></td></tr>').join("")||'<tr><td colspan="4" class="empty-state">No active students enrolled in this session.</td></tr>';
+ const date=$("attendanceDate").value||today(),records=attendance[date]||{},courseFilter=$("attendanceCourseFilter").value||"all",semesterFilter=$("attendanceSemesterFilter").value||"all",sectionFilter=($("attendanceSectionFilter").value||"").trim().toLowerCase();
+ const group=visibleStudents().filter(s=>s.active&&(courseFilter==="all"||s.courseId===courseFilter)&&(semesterFilter==="all"||String(s.semester||"")===semesterFilter)&&(!sectionFilter||String(s.section||"").toLowerCase().includes(sectionFilter)));
+ $("attendanceTable").innerHTML=group.map(s=>'<tr><td>'+studentMarkup(s)+'</td><td>'+escapeHTML(s.studentNumber)+'</td><td>'+escapeHTML(courseName(s.courseId))+'</td><td>'+(s.semester?"Semester "+escapeHTML(s.semester):"—")+'</td><td>'+escapeHTML(s.section||"—")+'</td><td><select class="attendance-select" data-attendance="'+s.id+'"><option value="" '+(!records[s.id]?"selected":"") +'>Select status</option><option value="Present" '+(records[s.id]==="Present"?"selected":"") +'>Present</option><option value="Absent" '+(records[s.id]==="Absent"?"selected":"") +'>Absent</option><option value="Late" '+(records[s.id]==="Late"?"selected":"") +'>Late</option></select></td></tr>').join("")||'<tr><td colspan="6" class="empty-state">No active students in this class for the selected session.</td></tr>';
 }
 function render(){populateCourseFilters();renderDashboard();renderStudents();renderCourses();renderAttendance()}
 function csvCell(value){return '"'+String(value??"").replace(/"/g,'""')+'"'}
@@ -116,9 +117,9 @@ function exportStudents(){
  toast("Student list exported.");
 }
 function exportAttendance(){
- const date=$("attendanceDate").value||today(),records=attendance[date]||{},courseFilter=$("attendanceCourseFilter").value||"all";
- const rows=visibleStudents().filter(s=>s.active&&(courseFilter==="all"||s.courseId===courseFilter)).map(s=>[s.studentNumber,s.name,courseName(s.courseId),s.semester?"Semester "+s.semester:"",s.section||"",records[s.id]||"Not marked"]);
- downloadCSV("campusdesk-"+activeAcademicSession.session_type.toLowerCase()+"-attendance-"+date+".csv",["Student ID","Full name","Course","Semester","Section","Attendance"],rows);toast("Attendance report exported.");
+ const date=$("attendanceDate").value||today(),records=attendance[date]||{},courseFilter=$("attendanceCourseFilter").value||"all",semesterFilter=$("attendanceSemesterFilter").value||"all",sectionFilter=($("attendanceSectionFilter").value||"").trim().toLowerCase();
+ const rows=visibleStudents().filter(s=>s.active&&(courseFilter==="all"||s.courseId===courseFilter)&&(semesterFilter==="all"||String(s.semester||"")===semesterFilter)&&(!sectionFilter||String(s.section||"").toLowerCase().includes(sectionFilter))).map(s=>[s.studentNumber,s.name,courseName(s.courseId),s.semester?"Semester "+s.semester:"",s.section||"",records[s.id]||"Not marked"]);
+ downloadCSV("campusdesk-"+activeAcademicSession.session_type.toLowerCase()+"-attendance-"+date+".csv",["Student ID","Full name","Course","Semester","Section","Attendance"],rows);toast("Student attendance exported.");
 }
 function printCampusDeskReport(title, headers, rows, subtitle=""){
  const win=window.open("","_blank");
@@ -144,8 +145,8 @@ function exportStudentPDF(studentId){
  printCampusDeskReport("Student Profile — "+s.name,["Information","Details"],fields,"Individual student profile. Keep this document confidential because it may contain personal information.");
 }
 function exportAttendancePDF(){
- const date=$("attendanceDate").value||today(),records=attendance[date]||{},filter=$("attendanceCourseFilter").value||"all";
- const rows=visibleStudents().filter(s=>s.active&&(filter==="all"||s.courseId===filter)).map(s=>[s.studentNumber,s.name,courseName(s.courseId),s.semester?"Semester "+s.semester:"",s.section||"",records[s.id]||"Not marked"]);
+ const date=$("attendanceDate").value||today(),records=attendance[date]||{},filter=$("attendanceCourseFilter").value||"all",semesterFilter=$("attendanceSemesterFilter").value||"all",sectionFilter=($("attendanceSectionFilter").value||"").trim().toLowerCase();
+ const rows=visibleStudents().filter(s=>s.active&&(filter==="all"||s.courseId===filter)&&(semesterFilter==="all"||String(s.semester||"")===semesterFilter)&&(!sectionFilter||String(s.section||"").toLowerCase().includes(sectionFilter))).map(s=>[s.studentNumber,s.name,courseName(s.courseId),s.semester?"Semester "+s.semester:"",s.section||"",records[s.id]||"Not marked"]);
  printCampusDeskReport("Attendance Report",["Student ID","Student Name","Course","Semester","Section","Status"],rows,"Session: "+activeAcademicSession.session_type+" "+activeAcademicSession.academic_year+" · Attendance date: "+date);
 }
 function showPage(page){document.querySelectorAll(".page-view").forEach(v=>v.classList.remove("active"));$(page+"Page").classList.add("active");document.querySelectorAll(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.page===page));$("pageCrumb").textContent=page[0].toUpperCase()+page.slice(1);$("sidebar").classList.remove("open");render()}
@@ -217,7 +218,7 @@ $("closeStudentDetails").addEventListener("click",closeStudentDetails);$("closeS
 $("closeModal").addEventListener("click",closeModal);$("cancelModal").addEventListener("click",closeModal);$("modalBackdrop").addEventListener("click",e=>{if(e.target===$("modalBackdrop"))closeModal()});
 $("courseForm").addEventListener("submit",async e=>{e.preventDefault();const id=$("editCourseId").value;const record={name:$("courseName").value.trim(),code:$("courseCode").value.trim().toUpperCase(),description:$("courseDescription").value.trim(),duration:$("courseDuration").value.trim()};if(!record.name||!record.code)return toast("Course name and code are required.");const result=id?await db.from("courses").update(record).eq("id",id):await db.from("courses").insert(record);if(result.error)return toast(result.error.code==="23505"?"A course with this name or code already exists.":result.error.message);closeCourseModal();await loadData();toast(id?"Course updated.":"Course added successfully.");});
 $("closeCourseModal").addEventListener("click",closeCourseModal);$("cancelCourseModal").addEventListener("click",closeCourseModal);$("courseModalBackdrop").addEventListener("click",e=>{if(e.target===$("courseModalBackdrop"))closeCourseModal()});
-$("studentSearch").addEventListener("input",renderStudents);$("studentCourseFilter").addEventListener("change",renderStudents);$("attendanceCourseFilter").addEventListener("change",renderAttendance);$("attendanceDate").addEventListener("change",renderAttendance);$("exportStudents").addEventListener("click",exportStudents);$("exportAttendance").addEventListener("click",exportAttendance);$("exportStudentsPdf").addEventListener("click",exportStudentsPDF);$("exportAttendancePdf").addEventListener("click",exportAttendancePDF);
+$("studentSearch").addEventListener("input",renderStudents);$("studentCourseFilter").addEventListener("change",renderStudents);$("attendanceCourseFilter").addEventListener("change",renderAttendance);$("attendanceSemesterFilter").addEventListener("change",renderAttendance);$("attendanceSectionFilter").addEventListener("input",renderAttendance);$("attendanceDate").addEventListener("change",renderAttendance);$("exportStudents").addEventListener("click",exportStudents);$("exportAttendance").addEventListener("click",exportAttendance);$("exportStudentsPdf").addEventListener("click",exportStudentsPDF);$("exportAttendancePdf").addEventListener("click",exportAttendancePDF);
 $("saveAttendance").addEventListener("click",async()=>{
  const date=$("attendanceDate").value||today(),controls=[...document.querySelectorAll("[data-attendance]")];
  if(!controls.length)return toast("There are no active students to mark.");
