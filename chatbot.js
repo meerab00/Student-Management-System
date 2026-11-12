@@ -127,7 +127,7 @@
 
     try {
       const { data, error } = await db.functions.invoke("campusdesk-assistant", {
-        body: { message: question }
+        body: { message: question, context: window.getCampusDeskChatContext?.() || null }
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
