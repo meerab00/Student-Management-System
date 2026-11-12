@@ -9,11 +9,11 @@ CampusDesk is a responsive, browser-based Student Management System. It uses Sup
 - Add, view, edit and delete student records; Student IDs are generated automatically and cannot be edited
 - Add, edit and delete courses and subjects
 - Manage student course enrollments and teacher records
-- Mark attendance and export student lists and date-wise attendance reports as CSV
+- Mark attendance and export student lists and date-wise attendance reports as CSV or print/save them as PDF
 - Manage exams, student results, fee records and class timetable
 - Supabase Row Level Security: each signed-in account can access only its own records
 - Responsive layout for desktop and mobile browsers
-- Floating CampusDesk Assistant with AI-powered guidance and built-in FAQ fallback
+- Floating CampusDesk Assistant with AI-powered guidance, live non-sensitive dashboard summaries, and built-in FAQ fallback
 
 ## Main workflows
 
@@ -24,7 +24,7 @@ CampusDesk is a responsive, browser-based Student Management System. It uses Sup
 5. Students can be assigned to courses through Enrollments.
 6. Attendance is recorded by date. Every active student shown in the selected course filter must have an explicit status before saving.
 7. Teachers, exams, results, fee records and timetable classes can be managed from the Academics and Finance sections.
-8. Student and attendance data can be exported as CSV. PDF admission slips and PDF reports are not currently provided.
+8. Student and attendance reports can be exported as CSV or printed / saved as PDF from the browser print dialog.
 
 ## Technology
 
@@ -38,11 +38,11 @@ CampusDesk is a responsive, browser-based Student Management System. It uses Sup
 
 The floating **CampusDesk Assistant** opens from the bottom-right corner of the website. It uses a Supabase Edge Function to call the Groq AI service. The function contains a feature-specific system guide so the assistant should explain only workflows that exist in the website. If the AI service is temporarily unavailable, the browser chatbot shows built-in FAQ guidance instead.
 
-The Groq API key must be stored as the `GROQ_API_KEY` secret in Supabase Edge Function settings. Never place this key in `chatbot.js`, `app.js`, or any other browser file. The assistant explains how to use CampusDesk; it does not read, add, edit or delete student records.
+The Groq API key must be stored as the `GROQ_API_KEY` secret in Supabase Edge Function settings. Never place this key in `chatbot.js`, `app.js`, or any other browser file. The assistant explains how to use CampusDesk and receives only non-sensitive aggregate dashboard figures (counts, course totals, attendance totals and fee totals) from the signed-in browser. It does not receive student names, emails, CNICs, phone numbers or other individual records, and it cannot add, edit or delete records.
 
 ## Database setup
 
-The Supabase project is configured for this app. The schema is maintained in `supabase/schema.sql`. It creates the core `courses`, `students` and `attendance` tables, enables Row Level Security, and applies per-user access policies. Additional academic modules use their corresponding Supabase tables.
+The Supabase project is configured for this app. The schema is maintained in `supabase/schema.sql` (core tables) and `supabase/modules-schema.sql` (subjects, enrollments, teachers, exams, results, fees, timetable and user profiles). Both scripts enable Row Level Security, add per-user access policies, and grant access only to authenticated users.
 
 To apply the core schema to another Supabase project, open its SQL Editor and run the complete `supabase/schema.sql` script. Configure the matching project URL and publishable key in `app.js`.
 
