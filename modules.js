@@ -10,15 +10,15 @@
     enrollments:{title:"Enrollment",table:"enrollments",fields:[
       {key:"student_id",label:"Student",type:"select",source:"students",required:true},
       {key:"course_id",label:"Course",type:"select",source:"courses",required:true},
-      {key:"semester",label:"Semester",type:"select",options:[["1","Semester 1"],["2","Semester 2"],["3","Semester 3"],["4","Semester 4"],["5","Semester 5"],["6","Semester 6"],["7","Semester 7"],["8","Semester 8"]]},
-      {key:"section",label:"Section"},{key:"enrolled_on",label:"Enrollment date",type:"date",default:new Date().toISOString().slice(0,10)},
+      {key:"semester",label:"Semester",type:"select",options:[["1","Semester 1"],["2","Semester 2"],["3","Semester 3"],["4","Semester 4"],["5","Semester 5"],["6","Semester 6"],["7","Semester 7"],["8","Semester 8"]],required:true},
+      {key:"section",label:"Section",required:true},{key:"enrolled_on",label:"Enrollment date",type:"date",default:new Date().toISOString().slice(0,10)},
       {key:"status",label:"Status",type:"select",options:[["Active","Active"],["Completed","Completed"],["Withdrawn","Withdrawn"]],default:"Active",required:true}]},
     teachers:{title:"Teacher",table:"teachers",fields:[
       {key:"full_name",label:"Full name",required:true},{key:"email",label:"Email",type:"email"},
       {key:"phone",label:"Phone"},{key:"specialization",label:"Specialization"}]},
     exams:{title:"Exam",table:"exams",fields:[
       {key:"title",label:"Exam title",required:true},{key:"exam_type",label:"Exam type",type:"select",options:[["Midterm","Midterm"],["Final","Final"],["Quiz","Quiz"],["Assignment","Assignment"],["Other","Other"]],required:true,default:"Other"},{key:"course_id",label:"Course",type:"select",source:"courses",required:true},
-      {key:"semester",label:"Semester",type:"select",options:[["1","Semester 1"],["2","Semester 2"],["3","Semester 3"],["4","Semester 4"],["5","Semester 5"],["6","Semester 6"],["7","Semester 7"],["8","Semester 8"]]},{key:"section",label:"Section"},{key:"subject_id",label:"Subject",type:"select",source:"subjects"},{key:"exam_date",label:"Exam date",type:"date"},
+      {key:"semester",label:"Semester",type:"select",options:[["1","Semester 1"],["2","Semester 2"],["3","Semester 3"],["4","Semester 4"],["5","Semester 5"],["6","Semester 6"],["7","Semester 7"],["8","Semester 8"]],required:true},{key:"section",label:"Section",required:true},{key:"subject_id",label:"Subject",type:"select",source:"subjects"},{key:"exam_date",label:"Exam date",type:"date"},
       {key:"total_marks",label:"Total marks",type:"number",required:true,default:"100"}]},
     results:{title:"Result",table:"results",fields:[
       {key:"exam_id",label:"Exam",type:"select",source:"exams",required:true},
