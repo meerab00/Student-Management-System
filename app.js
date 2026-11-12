@@ -19,7 +19,7 @@ async function loadAcademicSessions(){
  if(error)throw error;
  academicSessions=data||[];
  if(!academicSessions.length){
-  const year=new Date().getFullYear(),rows=["Spring","Summer","Winter"].map(type=>({user_id:currentUser.id,session_type:type,academic_year:year,is_active:type==="Spring"}));
+  const year=new Date().getFullYear(),rows=["Spring","Summer","Fall"].map(type=>({user_id:currentUser.id,session_type:type,academic_year:year,is_active:type==="Spring"}));
   const created=await db.from("academic_sessions").insert(rows).select("*");if(created.error)throw created.error;academicSessions=created.data||[];
  }
  if(!academicSessions.length)throw new Error("No academic sessions are configured for this account.");
