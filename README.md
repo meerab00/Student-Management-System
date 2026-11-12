@@ -5,6 +5,10 @@ CampusDesk is a responsive, browser-based Student Management System. It uses Sup
 ## Features
 
 - Single administrator sign-in and sign-out (public registration is not provided)
+- Department dashboard with clickable Spring, Summer and Winter session cards
+- Session-wise student enrollments, attendance, exams, results, fees, timetable and academic calendar
+- Class-wise timetable and exam schedules by programme, semester and section
+- Academic calendar for midterms, finals, holidays, vacations and department events
 - Dashboard with student, course and attendance summaries
 - Add, view, edit and delete student records; Student IDs are generated automatically and cannot be edited
 - Add, edit and delete courses and subjects
@@ -23,8 +27,9 @@ CampusDesk is a responsive, browser-based Student Management System. It uses Sup
 4. Courses and subjects can be created, edited and removed. When a course is removed, its students remain and their course assignment is cleared.
 5. Students can be assigned to courses through Enrollments.
 6. Attendance is recorded by date. Every active student shown in the selected course filter must have an explicit status before saving.
-7. Teachers, exams, results, fee records and timetable classes can be managed from the Academics and Finance sections.
-8. Student and attendance reports can be exported as CSV or printed / saved as PDF from the browser print dialog.
+7. Teachers, subjects and courses are shared department resources; enrollments, attendance, exams, results, fees, timetable and calendar events are scoped to the selected academic session.
+8. Timetable classes and exam schedules can be assigned to a programme, semester and section. The Academic Calendar stores semester dates, midterms, finals, holidays and vacations.
+9. Student and attendance reports can be exported as CSV or printed / saved as PDF from the browser print dialog.
 
 ## Technology
 
@@ -42,9 +47,9 @@ The Groq API key must be stored as the `GROQ_API_KEY` secret in Supabase Edge Fu
 
 ## Database setup
 
-The Supabase project is configured for this app. The schema is maintained in `supabase/schema.sql` (core tables) and `supabase/modules-schema.sql` (subjects, enrollments, teachers, exams, results, fees, timetable and user profiles). Both scripts enable Row Level Security, add per-user access policies, and grant access only to authenticated users.
+The Supabase project is configured for this app. The schema is maintained in `supabase/schema.sql` (core tables), `supabase/modules-schema.sql` (academic modules), and `supabase/academic-sessions-schema.sql` (Spring/Summer/Winter sessions, session-scoped records, class sections and academic calendar). Both scripts enable Row Level Security, add per-user access policies, and grant access only to authenticated users.
 
-To set up another Supabase project, open its SQL Editor and run `supabase/schema.sql` first, then run `supabase/modules-schema.sql`. Configure the matching project URL and publishable key in `app.js`.
+To set up another Supabase project, open its SQL Editor and run `supabase/schema.sql` first, then run `supabase/modules-schema.sql`, then `supabase/academic-sessions-schema.sql`. Configure the matching project URL and publishable key in `app.js`.
 
 **Security:** The frontend uses only a Supabase publishable key. Never put a Supabase secret or service-role key in browser code.
 
