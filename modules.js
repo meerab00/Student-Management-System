@@ -59,7 +59,14 @@
     const mathCount = mathCourse ? state.subjects.filter(x=>x.course_id===mathCourse.id).length : 0;
     if($m("subjectSummary"))$m("subjectSummary").textContent = mathCourse ? `BS Mathematics curriculum: ${mathCount} subjects across 8 semesters (sample plan)` : "Manage subjects offered under each course.";
     if(typeof renderCourses==="function")renderCourses();
-    $m("subjectsTable").innerHTML = state.subjects.slice().sort((a,b)=>(a.semester||99)-(b.semester||99)||a.name.localeCompare(b.name)).map(x=>`<tr><td>${escape(x.name)}</td><td>${escape(x.code)}</td><td>${x.semester?`Semester ${escape(x.semester)}`:"—"}</td><td>${escape(courseLabel(x.course_id))}</td><td><button class="action-btn" data-module-edit="subjects" data-id="${x.id}">Edit</button><button class="action-btn delete" data-module-delete="subjects" data-id="${x.id}">Delete</button></td></tr>`).join("") || '<tr><td colspan="4" class="empty-state">No subjects yet.</td></tr>';
+    const subjectFilter=$m("subjectCourseFilter");
+    if(subjectFilter){
+      const selected=subjectFilter.value||"all";
+      subjectFilter.innerHTML='<option value="all">All courses</option>'+courses.map(c=>'<option value="'+escape(c.id)+'">'+escape(c.name)+'</option>').join("");
+      subjectFilter.value=courses.some(c=>c.id===selected)?selected:"all";
+    }
+    const selectedCourse=$m("subjectCourseFilter")?.value||"all";
+    $m("subjectsTable").innerHTML = state.subjects.filter(x=>selectedCourse==="all"||x.course_id===selectedCourse).slice().sort((a,b)=>(a.semester||99)-(b.semester||99)||a.name.localeCompare(b.name)).map(x=>`<tr><td>${escape(x.name)}</td><td>${escape(x.code)}</td><td>${x.semester?`Semester ${escape(x.semester)}`:"—"}</td><td>${escape(courseLabel(x.course_id))}</td><td><button class="action-btn" data-module-edit="subjects" data-id="${x.id}">Edit</button><button class="action-btn delete" data-module-delete="subjects" data-id="${x.id}">Delete</button></td></tr>`).join("") || '<tr><td colspan="4" class="empty-state">No subjects yet.</td></tr>';
     $m("enrollmentsTable").innerHTML = state.enrollments.map(x=>{const student=students.find(s=>s.id===x.student_id);return "<tr><td>"+escape(student?.name||"—")+"</td><td>"+escape(student?.studentNumber||"—")+"</td><td>"+escape(courseLabel(x.course_id))+"</td><td>"+escape(x.enrolled_on||"—")+"</td><td>"+escape(x.status)+"</td><td><button class=\"action-btn\" data-module-edit=\"enrollments\" data-id=\""+x.id+"\">Edit</button><button class=\"action-btn delete\" data-module-delete=\"enrollments\" data-id=\""+x.id+"\">Delete</button></td></tr>"}).join("") || "<tr><td colspan=\"6\" class=\"empty-state\">No enrollments yet.</td></tr>";
     $m("teachersTable").innerHTML = state.teachers.map(x=>`<tr><td><b>${escape(x.full_name)}</b></td><td>${escape(x.email)}</td><td>${escape(x.phone)}</td><td>${escape(x.specialization)}</td><td><button class="action-btn" data-module-edit="teachers" data-id="${x.id}">Edit</button><button class="action-btn delete" data-module-delete="teachers" data-id="${x.id}">Delete</button></td></tr>`).join("") || '<tr><td colspan="5" class="empty-state">No teachers yet.</td></tr>';
     $m("examsTable").innerHTML = state.exams.map(x=>`<tr><td>${escape(x.title)}</td><td>${escape(courseLabel(x.course_id))}</td><td>${escape(subjectLabel(x.subject_id))}</td><td>${escape(x.exam_date||"—")}</td><td>${escape(x.total_marks)}</td><td><button class="action-btn" data-module-edit="exams" data-id="${x.id}">Edit</button><button class="action-btn delete" data-module-delete="exams" data-id="${x.id}">Delete</button></td></tr>`).join("") || '<tr><td colspan="6" class="empty-state">No exams scheduled yet.</td></tr>';
@@ -98,6 +105,7 @@
     const edit=e.target.closest("[data-module-edit]");if(edit){const type=edit.dataset.moduleEdit;const row=state[type].find(x=>x.id===edit.dataset.id);if(row)openModuleForm(type,row);return;}
     const del=e.target.closest("[data-module-delete]");if(del){const type=del.dataset.moduleDelete,row=state[type].find(x=>x.id===del.dataset.id);if(!row||!confirm("Delete this "+configs[type].title.toLowerCase()+" record?"))return;const {error}=await db.from(configs[type].table).delete().eq("id",row.id).eq("user_id",currentUser.id);if(error)return toast(error.message);await loadAcademicModules();toast("Record deleted.");}
   });
+  $m("subjectCourseFilter").addEventListener("change",renderModules);
   $m("moduleForm").addEventListener("submit",async e=>{
     e.preventDefault();if(!activeType)return;const type=activeType,config=configs[type],form=new FormData(e.currentTarget),record={user_id:currentUser.id};
     config.fields.forEach(f=>{const v=form.get(f.key);record[f.key]=v===""?null:v;});
