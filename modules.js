@@ -44,6 +44,7 @@
       {key:"room",label:"Room / Lab"}]}
   };
   let activeType = "";
+  let selectedCourseId = "";
   let selectedTimetableSemester = "";
   let selectedTimetableSection = "all";
   let editingId = "";
@@ -87,6 +88,7 @@
       subjectFilter.innerHTML='<option value="all">All courses</option>'+courses.map(c=>'<option value="'+escape(c.id)+'">'+escape(c.name)+'</option>').join("");
       subjectFilter.value=courses.some(c=>c.id===selected)?selected:"all";
     }
+    renderCourseSubjectWorkspace();
     const selectedCourse=$m("subjectCourseFilter")?.value||"all";
     $m("subjectsTable").innerHTML = state.subjects.filter(x=>selectedCourse==="all"||x.course_id===selectedCourse).slice().sort((a,b)=>(a.semester||99)-(b.semester||99)||a.name.localeCompare(b.name)).map(x=>`<tr><td>${escape(x.name)}</td><td>${escape(x.code)}</td><td>${x.semester?`Semester ${escape(x.semester)}`:"—"}</td><td>${escape(courseLabel(x.course_id))}</td><td><button class="action-btn" data-module-edit="subjects" data-id="${x.id}">Edit</button><button class="action-btn delete" data-module-delete="subjects" data-id="${x.id}">Delete</button></td></tr>`).join("") || '<tr><td colspan="4" class="empty-state">No subjects yet.</td></tr>';
     $m("enrollmentsTable").innerHTML = state.enrollments.map(x=>{const student=students.find(s=>s.id===x.student_id);return "<tr><td>"+escape(student?.name||"—")+"</td><td>"+escape(student?.studentNumber||"—")+"</td><td>"+escape(courseLabel(x.course_id))+"</td><td>"+escape(x.semester?"Semester "+x.semester:"—")+"</td><td>"+escape(x.section||"—")+"</td><td>"+escape(x.enrolled_on||"—")+"</td><td>"+escape(x.status)+"</td><td><button class=\"action-btn\" data-module-edit=\"enrollments\" data-id=\""+x.id+"\">Edit</button><button class=\"action-btn delete\" data-module-delete=\"enrollments\" data-id=\""+x.id+"\">Delete</button></td></tr>"}).join("") || "<tr><td colspan=\"8\" class=\"empty-state\">No enrollments yet.</td></tr>";
@@ -106,6 +108,25 @@
     if($m("academicSnapshot"))$m("academicSnapshot").innerHTML=`<div><span>Teachers</span><b>${state.teachers.length}</b></div><div><span>Subjects</span><b>${state.subjects.length}</b></div><div><span>Exams scheduled</span><b>${upcoming}</b></div><div><span>Outstanding fees</span><b>${money(pending)}</b></div><div><span>Results recorded</span><b>${state.results.length}</b></div><div><span>Course enrollments</span><b>${state.enrollments.length}</b></div>`;
     if($m("calendarTable"))$m("calendarTable").innerHTML=state.calendar.slice().sort((a,b)=>a.start_date.localeCompare(b.start_date)).map(x=>`<tr><td><b>${escape(x.title)}</b></td><td>${escape(x.event_type)}</td><td>${escape(x.start_date)}</td><td>${escape(x.end_date||"—")}</td><td>${escape(x.description||"—")}</td><td><button class="action-btn" data-module-edit="calendar" data-id="${x.id}">Edit</button><button class="action-btn delete" data-module-delete="calendar" data-id="${x.id}">Delete</button></td></tr>`).join("")||'<tr><td colspan="6" class="empty-state">No calendar events added yet.</td></tr>';
   }
+  function renderCourseSubjectWorkspace(){
+    const course=courses.find(x=>x.id===selectedCourseId);
+    const host=$m("courseSubjectsTable");
+    if(!course||!host)return;
+    $m("courseSubjectTitle").textContent=course.name;
+    $m("courseSubjectMeta").textContent=course.code+" · "+(course.duration||"Duration not set");
+    const rows=state.subjects.filter(x=>x.course_id===course.id).slice().sort((a,b)=>(a.semester||99)-(b.semester||99)||a.name.localeCompare(b.name));
+    $m("courseSubjectCount").textContent=rows.length+" subject"+(rows.length===1?"":"s");
+    host.innerHTML=rows.map(x=>'<tr><td><b>'+escape(x.name)+'</b></td><td>'+escape(x.code)+'</td><td>'+(x.semester?"Semester "+escape(x.semester):"—")+'</td><td><button class="action-btn" data-module-edit="subjects" data-id="'+x.id+'">Edit</button><button class="action-btn delete" data-module-delete="subjects" data-id="'+x.id+'">Delete</button></td></tr>').join("")||'<tr><td colspan="4" class="empty-state">No subjects added for this course yet. Click “Add subject” to create the first one.</td></tr>';
+  }
+  window.openCourseSubjects=function(courseId){
+    if(!courses.some(x=>x.id===courseId))return;
+    selectedCourseId=courseId;
+    showPage("courses");
+    $m("courseGrid").hidden=true;
+    $m("courseSubjectWorkspace").hidden=false;
+    renderCourseSubjectWorkspace();
+  };
+  function closeCourseSubjects(){selectedCourseId="";$m("courseSubjectWorkspace").hidden=true;$m("courseGrid").hidden=false;}
   function renderTimetableWorkspace(){
     const days=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
     const courseFilter=$m("timetableCourseFilter")?.value||"all";
@@ -140,21 +161,23 @@
     let rows = field.source==="courses" ? courses : field.source==="students" ? (["results","fees"].includes(activeType)&&window.getSessionStudents?window.getSessionStudents():students) : field.source==="subjects" ? state.subjects : field.source==="teachers" ? state.teachers : state.exams;
     return (field.options||rows.map(x=>[x.id,field.source==="courses"?x.name:field.source==="students"?x.name:field.source==="subjects"?x.name+" ("+x.code+")":field.source==="teachers"?x.full_name:x.title])).map(x=>`<option value="${escape(x[0])}">${escape(x[1])}</option>`).join("");
   }
-  function openModuleForm(type,row=null){
+  function openModuleForm(type,row=null,defaults={}){
     activeType=type;editingId=row?.id||"";const config=configs[type];
     $m("moduleModalTitle").textContent=(row?"Edit ":"Add ")+config.title.toLowerCase();
     $m("moduleFormFields").innerHTML=config.fields.map(field=>{
-      let value=row?.[field.key]??field.default??"";
+      let value=row?.[field.key]??defaults[field.key]??field.default??"";
       if(type==="timetable"&&!row&&field.key==="semester"&&selectedTimetableSemester)value=selectedTimetableSemester;
       if(type==="timetable"&&!row&&field.key==="section"&&selectedTimetableSection!=="all")value=selectedTimetableSection;
       if(field.type==="select")return `<label>${field.label}<select name="${field.key}" ${field.required?"required":""}><option value="">Choose ${field.label.toLowerCase()}</option>${sourceOptions(field)}</select></label>`;
       return `<label>${field.label}<input name="${field.key}" type="${field.type||"text"}" value="${escape(value)}" ${field.required?"required":""} ${field.type==="number"?'min="0" step="0.01"':""}></label>`;
     }).join("");
-    config.fields.forEach(field=>{const el=$m("moduleForm").elements[field.key];if(el&&row&&field.type==="select")el.value=row[field.key]||"";});
+    config.fields.forEach(field=>{const el=$m("moduleForm").elements[field.key];if(el&&field.type==="select"){const selected=row?.[field.key]??defaults[field.key]??"";if(selected)el.value=selected;}});
     $m("moduleModalBackdrop").classList.add("open");
   }
   function closeModuleForm(){$m("moduleModalBackdrop").classList.remove("open");$m("moduleForm").reset();activeType="";editingId="";}
   document.addEventListener("click",async e=>{
+    const courseAdd=e.target.closest("#addCourseSubject");if(courseAdd&&selectedCourseId){openModuleForm("subjects",null,{course_id:selectedCourseId});return;}
+    const back=e.target.closest("#backToCourses");if(back){closeCourseSubjects();return;}
     const add=e.target.closest("[data-module-add]");if(add){openModuleForm(add.dataset.moduleAdd);return;}
     const edit=e.target.closest("[data-module-edit]");if(edit){const type=edit.dataset.moduleEdit;const row=state[type].find(x=>x.id===edit.dataset.id);if(row)openModuleForm(type,row);return;}
     const del=e.target.closest("[data-module-delete]");if(del){const type=del.dataset.moduleDelete,row=state[type].find(x=>x.id===del.dataset.id);if(!row||!confirm("Delete this "+configs[type].title.toLowerCase()+" record?"))return;const {error}=await db.from(configs[type].table).delete().eq("id",row.id).eq("user_id",currentUser.id);if(error)return toast(error.message);await loadAcademicModules();toast("Record deleted.");}
