@@ -195,7 +195,7 @@
   attendanceToday:{present:values.filter(v=>v==="Present").length,absent:values.filter(v=>v==="Absent").length,late:values.filter(v=>v==="Late").length,notMarked:Math.max(0,active-values.length)},
   fees:{billed,paid:collected,outstanding:Math.max(0,billed-collected),records:state.fees.length},
   courseBreakdown:courses.map(c=>({course:c.name,students:currentStudents.filter(s=>s.courseId===c.id).length,subjects:state.subjects.filter(s=>s.course_id===c.id).length})),
-  academicSession:activeAcademicSession?activeAcademicSession.session_type+" "+activeAcademicSession.academic_year:"",calendarEvents:state.calendar.length
+  calendarEvents:state.calendar.length
  };
 };
 window.loadAcademicModules=loadAcademicModules;
