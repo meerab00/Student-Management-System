@@ -26,6 +26,11 @@
     "Where can I see my results?",
     "How do I check my fee balance?",
     "Where is my timetable?"
+  ] : isPublicPage ? [
+    "How do students log in?",
+    "How do I open Admin Login?",
+    "What information is public?",
+    "How is student data protected?"
   ] : [
     "How do I add a student?",
     "Can I change a Student ID?",
@@ -203,7 +208,7 @@
     launcher.classList.add("is-open");
     launcher.setAttribute("aria-label", "Close CampusDesk assistant");
     if (!messages.childElementCount) {
-      addMessage(isStudentPortal ? "Assalamu Alaikum! 👋\nI’m the CampusDesk Student Assistant. Ask me about attendance, results, fees, timetable, quizzes or notices." : "Assalamu Alaikum! 👋\nI’m the CampusDesk Assistant. Ask me how to use the Student Management System.", "bot");
+      addMessage(isStudentPortal ? "Assalamu Alaikum! 👋\nI’m the CampusDesk Student Assistant. Ask me about attendance, results, fees, timetable, quizzes or notices." : isPublicPage ? "Assalamu Alaikum! 👋\nI’m the CampusDesk Assistant. Ask me about the public website, Student Login or Admin Login." : "Assalamu Alaikum! 👋\nI’m the CampusDesk Assistant. Ask me how to use the Student Management System.", "bot");
       addSuggestions(quick);
     }
     input.focus();
