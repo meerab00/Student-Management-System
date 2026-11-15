@@ -18,7 +18,9 @@
   const input = form.querySelector("textarea");
   const sendButton = form.querySelector(".chat-send");
   const close = panel.querySelector(".chat-header button");
-  const isStudentPortal = document.body.dataset.chatRole === "student";
+  const chatRole = document.body.dataset.chatRole || "admin";
+  const isStudentPortal = chatRole === "student";
+  const isPublicPage = chatRole === "public";
   const quick = isStudentPortal ? [
     "How can I check my attendance?",
     "Where can I see my results?",
@@ -56,6 +58,15 @@
 
   function answer(question) {
     const s = question.toLowerCase();
+    if (isPublicPage) {
+      if (/\b(hello|hi|salam|assalam)\b/.test(s)) return "Welcome to CampusDesk! I can guide you around the public website and explain how students and administrators can sign in.";
+      if (/student|portal|login|sign in|account/.test(s)) return "Students can choose Student Login from the CampusDesk home page and sign in using their registered email and password. Administrators can use Admin Login.";
+      if (/admin|administrator/.test(s)) return "Administrator access is available through the Admin Login option. Private student records are not shown on the public website.";
+      if (/course|subject|programme|program|timetable|calendar|notice/.test(s)) return "The Public View contains general academic information such as programmes, subjects, schedules and academic calendar details when published by the institution.";
+      if (/privacy|private|data|marks|attendance|fee/.test(s)) return "The public website does not show individual student names, IDs, contact details, attendance, marks or fee records. Students must sign in to view their own information.";
+      if (/who are you|your name|chatbot|assistant/.test(s)) return "I am the CampusDesk Assistant. I can help explain the public website and how to access the Student and Admin portals.";
+      return "I can help with Student Login, Admin Login, public academic information and privacy. Ask me about one of these.";
+    }
     if (isStudentPortal) {
       if (/\b(hello|hi|salam|assalam)\b/.test(s)) return "Assalamu Alaikum! I’m the CampusDesk Student Assistant. I can explain how to use your student portal.";
       if (/attendance|present|absent/.test(s)) return "Open My Attendance on your Student Portal to view the attendance records shared with your account. If records are missing or look incorrect, contact your administrator.";
@@ -165,7 +176,7 @@
     messages.scrollTop = messages.scrollHeight;
 
     try {
-      if (isStudentPortal) {
+      if (isStudentPortal || isPublicPage) {
         waiting.remove();
         addMessage(answer(question), "bot");
       } else {
