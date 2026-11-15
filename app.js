@@ -53,6 +53,7 @@ async function loadData(){
  }
  if(typeof window.loadAcademicModules==="function") await window.loadAcademicModules();
  render();
+ if(typeof window.loadQuizzes==="function") await window.loadQuizzes();
 }
 function studentMarkup(s){return `<div class="student-cell"><span class="mini-avatar">${initials(s.name)}</span><span><b>${escapeHTML(s.name)}</b><small>${escapeHTML(s.email)}</small></span></div>`}
 function renderDashboard(){
