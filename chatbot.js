@@ -165,13 +165,18 @@
     messages.scrollTop = messages.scrollHeight;
 
     try {
-      const { data, error } = await db.functions.invoke("campusdesk-assistant", {
-        body: { message: question, context: window.getCampusDeskChatContext?.() || null }
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      waiting.remove();
-      addMessage(data?.reply || answer(question), "bot");
+      if (isStudentPortal) {
+        waiting.remove();
+        addMessage(answer(question), "bot");
+      } else {
+        const { data, error } = await db.functions.invoke("campusdesk-assistant", {
+          body: { message: question, context: window.getCampusDeskChatContext?.() || null }
+        });
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+        waiting.remove();
+        addMessage(data?.reply || answer(question), "bot");
+      }
     } catch (_error) {
       waiting.remove();
       addMessage(answer(question) + "\n\n(The built-in help is being shown because the AI service is temporarily unavailable.)", "bot");
