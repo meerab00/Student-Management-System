@@ -18,7 +18,13 @@
   const input = form.querySelector("textarea");
   const sendButton = form.querySelector(".chat-send");
   const close = panel.querySelector(".chat-header button");
-  const quick = [
+  const isStudentPortal = document.body.dataset.chatRole === "student";
+  const quick = isStudentPortal ? [
+    "How can I check my attendance?",
+    "Where can I see my results?",
+    "How do I check my fee balance?",
+    "Where is my timetable?"
+  ] : [
     "How do I add a student?",
     "Can I change a Student ID?",
     "How do I enroll a student?",
@@ -50,6 +56,20 @@
 
   function answer(question) {
     const s = question.toLowerCase();
+    if (isStudentPortal) {
+      if (/\b(hello|hi|salam|assalam)\b/.test(s)) return "Assalamu Alaikum! I’m the CampusDesk Student Assistant. I can explain how to use your student portal.";
+      if (/attendance|present|absent/.test(s)) return "Open My Attendance on your Student Portal to view the attendance records shared with your account. If records are missing or look incorrect, contact your administrator.";
+      if (/result|marks|grade|exam/.test(s)) return "Open My Results to view published exam marks and grades. Results appear after the administrator has entered and published them.";
+      if (/fee|payment|balance|dues/.test(s)) return "Open My Fees to see your fee records, paid amount, outstanding balance and due dates. For payment corrections, contact the administrator.";
+      if (/timetable|class|schedule|room/.test(s)) return "Open My Timetable to see your scheduled classes, subjects, teachers, days, times and rooms.";
+      if (/course|subject|programme|program/.test(s)) return "Open My Courses & Subjects to see your assigned course and its subjects.";
+      if (/quiz|test|attempt/.test(s)) return "Open Quizzes to see published quizzes. Select Open quiz to start one. Your previous attempts appear in the same section when available.";
+      if (/notice|announcement|event|calendar/.test(s)) return "Open Notices & Announcements to read information shared by your institution.";
+      if (/login|password|sign in|account/.test(s)) return "Use the Gmail address registered in your student record and the password you created. If you cannot sign in, contact your administrator to confirm your registered email.";
+      if (/profile|personal data|my data|privacy|other student/.test(s)) return "Your Student Portal is designed to show only the student record linked to your signed-in account. You cannot view or manage another student's private record.";
+      if (/who are you|your name|chatbot|assistant/.test(s)) return "I am the CampusDesk Student Assistant. I explain how to use your portal, but I cannot change your academic records.";
+      return "I can help explain your portal sections: My Profile, Courses & Subjects, Attendance, Results, Fees, Timetable, Quizzes and Notices. Ask me about one of these.";
+    }
     const context = window.getCampusDeskChatContext?.() || {};
     const totals = context.totals || {};
     const attendance = context.attendanceToday || {};
@@ -167,7 +187,7 @@
     launcher.classList.add("is-open");
     launcher.setAttribute("aria-label", "Close CampusDesk assistant");
     if (!messages.childElementCount) {
-      addMessage("Assalamu Alaikum! 👋\nI’m the CampusDesk Assistant. Ask me how to use the Student Management System.", "bot");
+      addMessage(isStudentPortal ? "Assalamu Alaikum! 👋\nI’m the CampusDesk Student Assistant. Ask me about attendance, results, fees, timetable, quizzes or notices." : "Assalamu Alaikum! 👋\nI’m the CampusDesk Assistant. Ask me how to use the Student Management System.", "bot");
       addSuggestions(quick);
     }
     input.focus();
