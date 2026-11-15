@@ -6,11 +6,13 @@
 <meta name="robots" content="noindex,nofollow">
 <title>CampusDesk | Student Quiz</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="chatbot.css">
+<script defer src="chatbot.js"></script>
 <style>
 :root{font-family:Inter,system-ui,Arial,sans-serif;color:#20243a;background:#f6f7fb}*{box-sizing:border-box}body{margin:0;padding:28px 16px}.wrap{max-width:760px;margin:0 auto}.brand{font-size:19px;font-weight:800;margin:8px 0 24px}.brand span{color:#6b5bd6}.card{background:#fff;border:1px solid #e8eaf1;border-radius:16px;padding:25px;margin:14px 0;box-shadow:0 8px 24px #20243a08}h1{font-size:26px;margin:8px 0}h2{font-size:18px;margin:0 0 12px}.muted{color:#7b8092;line-height:1.6;font-size:13px}.eyebrow{font-size:10px;font-weight:800;letter-spacing:1.4px;color:#8c8fa0}.field{display:grid;gap:7px;margin:14px 0;font-size:13px;font-weight:650}.field input{width:100%;padding:12px;border:1px solid #dfe2eb;border-radius:9px;font:inherit}.btn{border:0;border-radius:9px;padding:12px 17px;background:#6958d9;color:white;font-weight:700;cursor:pointer}.btn:disabled{opacity:.55;cursor:wait}.question{border-top:1px solid #edf0f5;padding:18px 0}.question:first-child{border-top:0}.question legend{font-weight:750;margin-bottom:12px}.choice{display:flex;gap:10px;align-items:flex-start;padding:10px;border:1px solid #e9ebf2;border-radius:9px;margin:8px 0;font-size:14px;cursor:pointer}.choice:has(input:checked){border-color:#8b7de8;background:#f5f3ff}.notice{padding:12px;border-radius:9px;background:#f1f3f8;color:#555c70;font-size:13px}.error{background:#fff0f0;color:#b54747}.score{font-size:22px;font-weight:800;color:#21865f}.hidden{display:none!important}@media(max-width:560px){body{padding:16px 10px}.card{padding:19px}h1{font-size:22px}}
 </style>
 </head>
-<body>
+<body data-chat-role="student">
 <main class="wrap">
  <div class="brand">Campus<span>Desk</span> <small style="font-size:11px;color:#9296a6;font-weight:600">STUDENT PORTAL</small></div>
  <section class="card" id="loading"><p class="muted">Loading quiz…</p></section>
