@@ -2,7 +2,7 @@
 (() => {
  const $q=id=>document.getElementById(id);
  const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
- let quizzes=[],questions=[],selectedQuiz=null,editingQuiz=null,editingQuestion=null;
+ let quizzes=[],questions=[],attempts=[],selectedQuiz=null,editingQuiz=null,editingQuestion=null;
  const notify=m=>typeof toast==="function"?toast(m):alert(m);
  async function loadQuizzes(){
   if(!currentUser)return;
@@ -12,6 +12,10 @@
   const qres=await db.from("quiz_questions").select("*").eq("user_id",currentUser.id).order("sort_order");
   if(qres.error){notify(qres.error.message);return;}
   questions=qres.data||[];
+  const ares=await db.from("quiz_attempts").select("*").eq("user_id",currentUser.id).order("submitted_at",{ascending:false});
+  if(ares.error){notify("Quiz results: "+ares.error.message);return;}
+  attempts=ares.data||[];
+  renderAttempts();
   render();
  }
  function render(){
@@ -21,9 +25,13 @@
   $q("quizQuestionCount").textContent=questions.length;
   $q("quizList").innerHTML=quizzes.map(q=>{
    const count=questions.filter(x=>x.quiz_id===q.id).length;
-   return `<article class="panel quiz-card"><div class="quiz-card-top"><span class="pill ${q.is_published?"":"inactive"}">${q.is_published?"Published":"Draft"}</span><span class="muted small">${count} question${count===1?"":"s"}</span></div><h2>${esc(q.title)}</h2><p class="muted">${esc(q.description||"No description added.")}</p><div class="quiz-card-meta"><span>◷ ${q.time_limit_minutes} min</span><span>✎ ${questions.filter(x=>x.quiz_id===q.id).reduce((n,x)=>n+Number(x.points||0),0)} points</span></div><div class="quiz-card-actions"><button class="secondary-btn" data-quiz-questions="${q.id}">Manage questions</button><button class="secondary-btn" data-quiz-preview="${q.id}">Preview</button><button class="action-btn" data-quiz-edit="${q.id}">Edit</button><button class="action-btn delete" data-quiz-delete="${q.id}">Delete</button></div></article>`;
+   return `<article class="panel quiz-card"><div class="quiz-card-top"><span class="pill ${q.is_published?"":"inactive"}">${q.is_published?"Published":"Draft"}</span><span class="muted small">${count} question${count===1?"":"s"}</span></div><h2>${esc(q.title)}</h2><p class="muted">${esc(q.description||"No description added.")}</p><div class="quiz-card-meta"><span>◷ ${q.time_limit_minutes} min</span><span>✎ ${questions.filter(x=>x.quiz_id===q.id).reduce((n,x)=>n+Number(x.points||0),0)} points</span></div><div class="quiz-card-actions"><button class="secondary-btn" data-quiz-questions="${q.id}">Manage questions</button><button class="secondary-btn" data-quiz-preview="${q.id}">Preview</button><button class="secondary-btn" data-quiz-share="${q.id}">Student link</button><button class="action-btn" data-quiz-edit="${q.id}">Edit</button><button class="action-btn delete" data-quiz-delete="${q.id}">Delete</button></div></article>`;
   }).join("")||'<div class="panel empty-state">No quizzes created yet. Select “Create quiz” to start.</div>';
   if(selectedQuiz){const q=quizzes.find(x=>x.id===selectedQuiz.id);if(q){selectedQuiz=q;renderQuestions();}}
+ }
+ function renderAttempts(){
+  const body=$q("quizAttemptsTable");if(!body)return;
+  body.innerHTML=attempts.map(a=>`<tr><td>${esc(a.student_name)}</td><td>${esc(a.student_id||"—")}</td><td>${esc(quizzes.find(q=>q.id===a.quiz_id)?.title||"Quiz")}</td><td>${esc(a.score)} / ${esc(a.total_points)}</td><td>${a.total_points?Math.round(Number(a.score)/Number(a.total_points)*100):0}%</td><td>${new Date(a.submitted_at).toLocaleString()}</td></tr>`).join("")||'<tr><td colspan="6" class="empty-state">No student attempts submitted yet.</td></tr>';
  }
  function renderQuestions(){
   const rows=questions.filter(x=>x.quiz_id===selectedQuiz.id);
@@ -59,6 +67,7 @@
   const qdel=e.target.closest("[data-quiz-delete]");if(qdel){const row=quizzes.find(x=>x.id===qdel.dataset.quizDelete);if(row&&confirm("Delete this quiz and all its questions?")){const {error}=await db.from("quizzes").delete().eq("id",row.id).eq("user_id",currentUser.id);if(error)return notify(error.message);if(selectedQuiz?.id===row.id){selectedQuiz=null;$q("quizQuestionPanel").hidden=true;}$q("quizPreviewPanel").hidden=true;await loadQuizzes();notify("Quiz deleted.");}return;}
   const manage=e.target.closest("[data-quiz-questions]");if(manage){selectedQuiz=quizzes.find(x=>x.id===manage.dataset.quizQuestions);$q("quizPreviewPanel").hidden=true;renderQuestions();$q("quizQuestionPanel").scrollIntoView({behavior:"smooth",block:"start"});return;}
   const preview=e.target.closest("[data-quiz-preview]");if(preview){previewQuiz(preview.dataset.quizPreview);return;}
+  const share=e.target.closest("[data-quiz-share]");if(share){const url=new URL("student-quiz.html?quiz="+encodeURIComponent(share.dataset.quizShare),window.location.href).href;try{await navigator.clipboard.writeText(url);notify("Student quiz link copied. Share it with your class.");}catch(_){window.prompt("Copy this student quiz link:",url);}return;}
   const addQuestion=e.target.closest("#addQuizQuestionBtn");if(addQuestion){if(selectedQuiz)openQuestionModal();return;}
   const editQuestion=e.target.closest("[data-question-edit]");if(editQuestion){openQuestionModal(questions.find(x=>x.id===editQuestion.dataset.questionEdit));return;}
   const deleteQuestion=e.target.closest("[data-question-delete]");if(deleteQuestion){const row=questions.find(x=>x.id===deleteQuestion.dataset.questionDelete);if(row&&confirm("Delete this question?")){const {error}=await db.from("quiz_questions").delete().eq("id",row.id).eq("user_id",currentUser.id);if(error)return notify(error.message);await loadQuizzes();notify("Question deleted.");}return;}
