@@ -12,6 +12,7 @@ CampusDesk is a responsive, browser-based Student Management System. It uses Sup
 - Dashboard with student, course and attendance summaries
 - Add, view, edit and delete student records; Student IDs are generated automatically and cannot be edited
 - Create, edit and delete online quizzes with time limits, draft/published status, multiple-choice questions, four options, one correct answer, points and quiz preview
+- Share a student quiz link; active students verify with their registered name and Student ID, submit answers, receive an automatically calculated score, and have attempts saved privately for the administrator
 - Add, edit and delete courses and subjects
 - Manage student course enrollments and teacher records
 - Mark attendance and export student lists and date-wise attendance reports as CSV or print/save them as PDF
@@ -48,7 +49,7 @@ The Groq API key must be stored as the `GROQ_API_KEY` secret in Supabase Edge Fu
 
 ## Database setup
 
-The Supabase project is configured for this app. The schema is maintained in `supabase/schema.sql` (core tables), `supabase/modules-schema.sql` (academic modules), and `supabase/academic-sessions-schema.sql` (Spring/Summer/Fall sessions, session-scoped records, class sections and academic calendar). Both scripts enable Row Level Security, add per-user access policies, and grant access only to authenticated users.
+The Supabase project is configured for this app. The schema is maintained in `supabase/schema.sql` (core tables), `supabase/modules-schema.sql` (academic modules), `supabase/academic-sessions-schema.sql` (academic sessions), and `supabase/quizzes-schema.sql` (quiz builder). The student-facing quiz portal RPCs are in `supabase/student-quiz-portal.sql`. Both scripts enable Row Level Security, add per-user access policies, and grant access only to authenticated users.
 
 To set up another Supabase project, open its SQL Editor and run `supabase/schema.sql` first, then run `supabase/modules-schema.sql`, then `supabase/academic-sessions-schema.sql`. Configure the matching project URL and publishable key in `app.js`.
 
@@ -72,6 +73,8 @@ Student-Management-System/
 ├── modules.js
 ├── chatbot.js
 ├── chatbot.css
+├── quizzes.js
+├── student-quiz.html
 ├── README.md
 └── supabase/
     ├── schema.sql
