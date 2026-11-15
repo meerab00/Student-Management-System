@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>CampusDesk | Student Portal</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{font-family:Inter,system-ui,Arial,sans-serif;color:#20243a;background:#f5f6fb}*{box-sizing:border-box}body{margin:0}.top{background:#fff;border-bottom:1px solid #e8eaf1;padding:16px 5%;display:flex;justify-content:space-between;align-items:center}.brand{font-weight:850;font-size:20px}.brand span{color:#6958d9}.wrap{max-width:1100px;margin:32px auto;padding:0 18px}.muted{color:#73798c;font-size:13px;line-height:1.55}.card{background:#fff;border:1px solid #e8eaf1;border-radius:15px;padding:20px;margin:14px 0;box-shadow:0 6px 20px #20243a08}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}.stat{font-size:25px;font-weight:800;margin-top:8px}.field{display:grid;gap:7px;margin:13px 0;font-size:13px;font-weight:650}.field input{padding:12px;border:1px solid #dfe2eb;border-radius:9px;font:inherit}.btn{background:#6958d9;color:white;border:0;padding:11px 16px;border-radius:9px;font-weight:750;cursor:pointer}.btn.secondary{background:#f0efff;color:#5546bd}.btn:disabled{opacity:.5}.hidden{display:none!important}.section-title{font-size:18px;margin:24px 0 8px}.item{border-top:1px solid #edf0f5;padding:12px 0}.item:first-child{border:0}.pill{display:inline-block;border-radius:20px;background:#f0efff;color:#5546bd;padding:4px 9px;font-size:11px;font-weight:700}.error{color:#b54747;background:#fff0f0;padding:10px;border-radius:8px}.success{color:#19734e;background:#eaf8f1;padding:10px;border-radius:8px}a{color:#594bc4;text-decoration:none;font-weight:700}.small{font-size:12px}@media(max-width:600px){.wrap{margin:18px auto}.top{padding:14px 18px}}
+</style></head><body>
+<header class="top"><div class="brand">Campus<span>Desk</span> <span class="small" style="color:#85899a">STUDENT PORTAL</span></div><button class="btn secondary hidden" id="logout">Sign out</button></header>
+<main class="wrap">
+<section class="card" id="login">
+ <h1>Student Sign In</h1><p class="muted">Enter the email address registered by your institute. We’ll send a one-time verification code.</p>
+ <form id="emailForm"><label class="field">Registered email<input type="email" id="email" required placeholder="student@example.com" autocomplete="email"></label><button class="btn" id="sendCode">Send verification code</button></form>
+ <form id="otpForm" class="hidden"><label class="field">6-digit verification code<input id="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required placeholder="Enter code"></label><button class="btn" id="verifyCode">Verify and continue</button></form>
+ <p class="muted" id="loginMessage" aria-live="polite"></p><p class="muted small">Only active students with an email already registered by the administrator can access the portal.</p>
+</section>
+<section id="dashboard" class="hidden">
+ <div class="card"><div class="muted">WELCOME BACK</div><h1 id="studentName">Student</h1><p class="muted" id="studentMeta"></p></div>
+ <div class="grid" id="stats"></div>
+ <h2 class="section-title">My Profile</h2><div class="card" id="profile"></div>
+ <h2 class="section-title">My Courses & Subjects</h2><div class="card" id="courses"></div>
+ <h2 class="section-title">My Attendance</h2><div class="card" id="attendance"></div>
+ <h2 class="section-title">My Results</h2><div class="card" id="results"></div>
+ <h2 class="section-title">My Fees</h2><div class="card" id="fees"></div>
+ <h2 class="section-title">My Timetable</h2><div class="card" id="timetable"></div>
+ <h2 class="section-title">Quizzes</h2><div class="card" id="quizzes"></div>
+ <h2 class="section-title">Notices & Announcements</h2><div class="card" id="notices"></div>
+</section>
+</main>
+<script>
+const SUPABASE_URL="https://nmtgfdjxgjxxdxibiavv.supabase.co";
+const SUPABASE_ANON_KEY="sb_publishable_ZxDemHTHOicSps8_LYRoyA_q56R5k-z";
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+const $=id=>document.getElementById(id),esc=v=>String(v??"—").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function message(t,cls=""){ $("loginMessage").className="muted "+cls;$("loginMessage").textContent=t; }
+function showLogin(){ $("login").classList.remove("hidden");$("dashboard").classList.add("hidden");$("logout").classList.add("hidden"); }
+function showDashboard(){ $("login").classList.add("hidden");$("dashboard").classList.remove("hidden");$("logout").classList.remove("hidden"); }
+$("emailForm").addEventListener("submit",async e=>{e.preventDefault();const email=$("email").value.trim().toLowerCase();$("sendCode").disabled=true;message("Sending verification code…");const {error}=await db.auth.signInWithOtp({email,options:{shouldCreateUser:true}});$("sendCode").disabled=false;if(error){message(error.message,"error");return;}$("otpForm").classList.remove("hidden");message("If this email is registered with CampusDesk, a verification code has been sent.","success");});
+$("otpForm").addEventListener("submit",async e=>{e.preventDefault();$("verifyCode").disabled=true;message("Verifying…");const {data,error}=await db.auth.verifyOtp({email:$("email").value.trim().toLowerCase(),token:$("otp").value.trim(),type:"email"});$("verifyCode").disabled=false;if(error){message(error.message,"error");return;}await loadDashboard();});
+function list(id,rows,fn,empty){$(id).innerHTML=rows.length?rows.map((r,i)=>'<div class="item">'+fn(r,i)+'</div>').join(""):'<p class="muted">'+empty+'</p>';}
+async function loadDashboard(){
+ const {data,error}=await db.rpc("get_my_student_dashboard");
+ if(error){await db.auth.signOut();showLogin();message(error.message,"error");return;}
+ const p=data.profile||{};showDashboard();$("studentName").textContent=p.full_name||"Student";$("studentMeta").textContent=(p.student_number||"")+" · "+(p.course||"Course not assigned");
+ const present=(data.attendance||[]).filter(x=>x.status==="Present").length, total=(data.attendance||[]).length, paid=(data.fees||[]).reduce((s,x)=>s+Number(x.paid_amount||0),0), due=(data.fees||[]).reduce((s,x)=>s+Math.max(0,Number(x.amount||0)-Number(x.paid_amount||0)),0);
+ $("stats").innerHTML=[["Attendance",total?Math.round(present/total*100)+"%":"—"],["Subjects",(data.timetable||[]).length],["Fee balance",due.toLocaleString()],["Published quizzes",(data.quizzes||[]).length]].map(x=>'<div class="card"><div class="muted">'+x[0]+'</div><div class="stat">'+x[1]+'</div></div>').join("");
+ $("profile").innerHTML='<div class="grid">'+[['Student ID',p.student_number],['Email',p.email],['Phone',p.phone],['Father / Guardian',p.father_name],['Guardian phone',p.guardian_phone],['Date of birth',p.date_of_birth],['Gender',p.gender],['Admission date',p.admission_date],['Address',p.address]].map(x=>'<div class="item"><div class="muted">'+x[0]+'</div><b>'+esc(x[1])+'</b></div>').join("")+'</div>';
+ $("courses").innerHTML='<b>'+esc(p.course||"No course assigned")+'</b><p class="muted">Your enrolled course and its timetable are shown below.</p>';
+ list("attendance",data.attendance||[],r=>'<b>'+esc(r.date)+'</b><span class="pill" style="float:right">'+esc(r.status)+'</span>',"No attendance records available yet.");
+ list("results",data.results||[],r=>'<b>'+esc(r.exam)+'</b><div class="muted">'+esc(r.subject)+' · '+esc(r.date)+'</div><b>'+esc(r.obtained_marks)+' / '+esc(r.total_marks)+'</b>',"No results have been published yet.");
+ list("fees",data.fees||[],r=>'<b>'+esc(r.title)+'</b><div class="muted">Due: '+esc(r.due_date)+' · '+esc(r.status)+'</div><b>Paid '+esc(r.paid_amount)+' / '+esc(r.amount)+'</b>',"No fee records available.");
+ const days=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+ list("timetable",data.timetable||[],r=>'<b>'+esc(days[Number(r.weekday)]||r.weekday)+' · '+esc(String(r.start_time||"").slice(0,5))+'–'+esc(String(r.end_time||"").slice(0,5))+'</b><div>'+esc(r.subject)+' · '+esc(r.teacher)+'</div><div class="muted">Room: '+esc(r.room)+'</div>',"No timetable has been published for your course yet.");
+ list("quizzes",data.quizzes||[],r=>'<b>'+esc(r.title)+'</b><div class="muted">'+esc(r.description)+' · '+esc(r.time_limit_minutes)+' minutes</div><a href="./student-quiz.html?quiz='+encodeURIComponent(r.id)+'">Open quiz →</a>',"No published quizzes available.");
+ list("notices",data.notices||[],r=>'<b>'+esc(r.title)+'</b><div class="muted">'+esc(r.start_date)+' · '+esc(r.event_type)+'</div><div>'+esc(r.description)+'</div>',"No notices available.");
+}
+$("logout").addEventListener("click",async()=>{await db.auth.signOut();showLogin();$("emailForm").reset();$("otpForm").reset();});
+db.auth.getSession().then(({data})=>{if(data.session)loadDashboard();});
+db.auth.onAuthStateChange((event,session)=>{if(event==="SIGNED_OUT"||!session)showLogin();});
+</script></body></html>
