@@ -1,9 +1,11 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>CampusDesk | Student Portal</title>
+<link rel="stylesheet" href="chatbot.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script defer src="chatbot.js"></script>
 <style>
 :root{font-family:Inter,system-ui,Arial,sans-serif;color:#20243a;background:#f5f6fb}*{box-sizing:border-box}body{margin:0}.top{background:#fff;border-bottom:1px solid #e8eaf1;padding:16px 5%;display:flex;justify-content:space-between;align-items:center}.brand{font-weight:850;font-size:20px}.brand span{color:#6958d9}.wrap{max-width:1100px;margin:32px auto;padding:0 18px}.muted{color:#73798c;font-size:13px;line-height:1.55}.card{background:#fff;border:1px solid #e8eaf1;border-radius:15px;padding:20px;margin:14px 0;box-shadow:0 6px 20px #20243a08}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}.stat{font-size:25px;font-weight:800;margin-top:8px}.field{display:grid;gap:7px;margin:13px 0;font-size:13px;font-weight:650}.field input{padding:12px;border:1px solid #dfe2eb;border-radius:9px;font:inherit}.btn{background:#6958d9;color:white;border:0;padding:11px 16px;border-radius:9px;font-weight:750;cursor:pointer}.btn.secondary{background:#f0efff;color:#5546bd}.btn:disabled{opacity:.5}.hidden{display:none!important}.section-title{font-size:18px;margin:24px 0 8px}.item{border-top:1px solid #edf0f5;padding:12px 0}.item:first-child{border:0}.pill{display:inline-block;border-radius:20px;background:#f0efff;color:#5546bd;padding:4px 9px;font-size:11px;font-weight:700}.error{color:#b54747;background:#fff0f0;padding:10px;border-radius:8px}.success{color:#19734e;background:#eaf8f1;padding:10px;border-radius:8px}a{color:#594bc4;text-decoration:none;font-weight:700}.small{font-size:12px}@media(max-width:600px){.wrap{margin:18px auto}.top{padding:14px 18px}}
-</style></head><body>
+</style></head><body data-chat-role="student">
 <header class="top"><div class="brand">Campus<span>Desk</span> <span class="small" style="color:#85899a">STUDENT PORTAL</span></div><button class="btn secondary hidden" id="logout">Sign out</button></header>
 <main class="wrap">
 <section class="card" id="login">
