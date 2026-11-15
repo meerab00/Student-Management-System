@@ -5,7 +5,7 @@
  let quizzes=[],questions=[],selectedQuiz=null,editingQuiz=null,editingQuestion=null;
  const notify=m=>typeof toast==="function"?toast(m):alert(m);
  async function loadQuizzes(){
-  if(!window.db||!window.currentUser)return;
+  if(!currentUser)return;
   const {data,error}=await db.from("quizzes").select("*").eq("user_id",currentUser.id).order("created_at",{ascending:false});
   if(error){notify("Quiz module: "+error.message);return;}
   quizzes=data||[];
