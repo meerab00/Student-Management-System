@@ -7,10 +7,10 @@
 <header class="top"><div class="brand">Campus<span>Desk</span> <span class="small" style="color:#85899a">STUDENT PORTAL</span></div><button class="btn secondary hidden" id="logout">Sign out</button></header>
 <main class="wrap">
 <section class="card" id="login">
- <h1>Student Sign In</h1><p class="muted">Enter the email address registered by your institute. We’ll send a one-time verification code.</p>
- <form id="emailForm"><label class="field">Registered email<input type="email" id="email" required placeholder="student@example.com" autocomplete="email"></label><button class="btn" id="sendCode">Send verification code</button></form>
+ <h1>Student Sign In</h1><p class="muted">Enter the Gmail address registered with your student record. We’ll send a one-time verification code to confirm it is yours.</p>
+ <form id="emailForm"><label class="field">Registered Gmail<input type="email" id="email" required placeholder="yourname@gmail.com" autocomplete="email"></label><button class="btn" id="sendCode">Send verification code</button></form>
  <form id="otpForm" class="hidden"><label class="field">6-digit verification code<input id="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required placeholder="Enter code"></label><button class="btn" id="verifyCode">Verify and continue</button></form>
- <p class="muted" id="loginMessage" aria-live="polite"></p><p class="muted small">Only active students with an email already registered by the administrator can access the portal.</p>
+ <p class="muted" id="loginMessage" aria-live="polite"></p><p class="muted small">Only active students can access their own record using the Gmail address registered by the administrator. A verification code is required for privacy.</p>
 </section>
 <section id="dashboard" class="hidden">
  <div class="card"><div class="muted">WELCOME BACK</div><h1 id="studentName">Student</h1><p class="muted" id="studentMeta"></p></div>
