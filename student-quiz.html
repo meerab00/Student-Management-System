@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>CampusDesk | Student Quiz</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{font-family:Inter,system-ui,Arial,sans-serif;color:#20243a;background:#f6f7fb}*{box-sizing:border-box}body{margin:0;padding:28px 16px}.wrap{max-width:760px;margin:0 auto}.brand{font-size:19px;font-weight:800;margin:8px 0 24px}.brand span{color:#6b5bd6}.card{background:#fff;border:1px solid #e8eaf1;border-radius:16px;padding:25px;margin:14px 0;box-shadow:0 8px 24px #20243a08}h1{font-size:26px;margin:8px 0}h2{font-size:18px;margin:0 0 12px}.muted{color:#7b8092;line-height:1.6;font-size:13px}.eyebrow{font-size:10px;font-weight:800;letter-spacing:1.4px;color:#8c8fa0}.field{display:grid;gap:7px;margin:14px 0;font-size:13px;font-weight:650}.field input{width:100%;padding:12px;border:1px solid #dfe2eb;border-radius:9px;font:inherit}.btn{border:0;border-radius:9px;padding:12px 17px;background:#6958d9;color:white;font-weight:700;cursor:pointer}.btn:disabled{opacity:.55;cursor:wait}.question{border-top:1px solid #edf0f5;padding:18px 0}.question:first-child{border-top:0}.question legend{font-weight:750;margin-bottom:12px}.choice{display:flex;gap:10px;align-items:flex-start;padding:10px;border:1px solid #e9ebf2;border-radius:9px;margin:8px 0;font-size:14px;cursor:pointer}.choice:has(input:checked){border-color:#8b7de8;background:#f5f3ff}.notice{padding:12px;border-radius:9px;background:#f1f3f8;color:#555c70;font-size:13px}.error{background:#fff0f0;color:#b54747}.score{font-size:22px;font-weight:800;color:#21865f}.hidden{display:none!important}@media(max-width:560px){body{padding:16px 10px}.card{padding:19px}h1{font-size:22px}}
+</style>
+</head>
+<body>
+<main class="wrap">
+ <div class="brand">Campus<span>Desk</span> <small style="font-size:11px;color:#9296a6;font-weight:600">STUDENT PORTAL</small></div>
+ <section class="card" id="loading"><p class="muted">Loading quiz…</p></section>
+ <section class="card hidden" id="intro">
+  <div class="eyebrow">ONLINE ASSESSMENT</div><h1 id="quizTitle">Quiz</h1><p class="muted" id="quizDescription"></p>
+  <div class="notice" id="quizMeta"></div>
+  <form id="studentForm">
+   <label class="field">Student name<input id="studentName" required minlength="2" maxlength="120" autocomplete="name" placeholder="Enter your full name"></label>
+   <label class="field">Student ID<input id="studentId" required maxlength="40" placeholder="Enter your Student ID"></label>
+   <button class="btn" type="submit">Start quiz</button>
+  </form>
+ </section>
+ <section class="card hidden" id="test">
+  <div class="eyebrow">ANSWER ALL YOU CAN</div><h1 id="testTitle"></h1><p class="muted" id="studentLabel"></p>
+  <form id="answersForm"><div id="questions"></div><button class="btn" id="submitBtn" type="submit">Submit answers</button></form>
+ </section>
+ <section class="card hidden" id="result" aria-live="polite">
+  <div class="eyebrow">QUIZ SUBMITTED</div><h1>Thank you!</h1><p class="muted" id="resultTitle"></p><p class="score" id="resultScore"></p><p class="muted" id="resultMeta"></p>
+ </section>
+ <section class="card hidden" id="errorCard"><div class="notice error" id="errorText"></div></section>
+</main>
+<script>
+const SUPABASE_URL="https://nmtgfdjxgjxxdxibiavv.supabase.co";
+const SUPABASE_ANON_KEY="sb_publishable_ZxDemHTHOicSps8_LYRoyA_q56R5k-z";
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+const $=id=>document.getElementById(id);
+const quizId=new URLSearchParams(location.search).get("quiz");
+let quiz=null,student=null,submitting=false;
+const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function show(id){["loading","intro","test","result","errorCard"].forEach(x=>$(x).classList.toggle("hidden",x!==id));}
+function fail(message){$("errorText").textContent=message;show("errorCard");}
+async function loadQuiz(){
+ if(!quizId){fail("This quiz link is incomplete. Ask your teacher for the correct link.");return;}
+ const {data,error}=await db.rpc("get_student_quiz",{p_quiz_id:quizId});
+ if(error||!data){fail(error?.message||"Quiz not found.");return;}
+ quiz=data;
+ if(!Array.isArray(quiz.questions)||!quiz.questions.length){fail("This quiz does not have any questions yet.");return;}
+ $("quizTitle").textContent=quiz.title;
+ $("quizDescription").textContent=quiz.description||"Please enter your details to begin.";
+ $("quizMeta").textContent=quiz.questions.length+" questions · "+quiz.time_limit_minutes+" minutes · Submit when you finish.";
+ show("intro");
+}
+$("studentForm").addEventListener("submit",e=>{e.preventDefault();student={name:$("studentName").value.trim(),id:$("studentId").value.trim()};$("testTitle").textContent=quiz.title;$("studentLabel").textContent="Student: "+student.name+" · "+student.id;
+ $("questions").innerHTML=quiz.questions.map((q,i)=>'<fieldset class="question"><legend>'+(i+1)+'. '+esc(q.question_text)+' <span class="muted">('+esc(q.points)+' points)</span></legend>'+q.choices.map((choice,j)=>'<label class="choice"><input type="radio" name="q_'+q.id+'" value="'+j+'"> <span>'+String.fromCharCode(65+j)+'. '+esc(choice)+'</span></label>').join("")+'</fieldset>').join("");
+ show("test");});
+$("answersForm").addEventListener("submit",async e=>{
+ e.preventDefault();if(submitting)return;
+ const answers={};quiz.questions.forEach(q=>{const selected=document.querySelector('input[name="q_'+q.id+'"]:checked');if(selected)answers[q.id]=Number(selected.value);});
+ if(!Object.keys(answers).length&&!confirm("You have not selected any answers. Submit anyway?"))return;
+ submitting=true;$("submitBtn").disabled=true;$("submitBtn").textContent="Submitting…";
+ const {data,error}=await db.rpc("submit_student_quiz",{p_quiz_id:quiz.id,p_student_name:student.name,p_student_id:student.id,p_answers:answers});
+ if(error){submitting=false;$("submitBtn").disabled=false;$("submitBtn").textContent="Submit answers";fail(error.message);return;}
+ $("resultTitle").textContent=data.quiz_title+" · "+student.name+" ("+student.id+")";
+ $("resultScore").textContent=data.score+" / "+data.total_points+" points";
+ $("resultMeta").textContent=data.percentage+"% · "+data.answered+" of "+data.question_count+" questions answered. Your result has been recorded.";
+ show("result");
+});
+loadQuiz().catch(e=>fail(e.message||"Unable to load this quiz."));
+</script>
+</body>
+</html>
