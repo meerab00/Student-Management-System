@@ -11,6 +11,7 @@ CampusDesk is a responsive, browser-based Student Management System. It uses Sup
 - Academic calendar for midterms, finals, holidays, vacations and department events
 - Dashboard with student, course and attendance summaries
 - Add, view, edit and delete student records; Student IDs are generated automatically and cannot be edited
+- Create, edit and delete online quizzes with time limits, draft/published status, multiple-choice questions, four options, one correct answer, points and quiz preview
 - Add, edit and delete courses and subjects
 - Manage student course enrollments and teacher records
 - Mark attendance and export student lists and date-wise attendance reports as CSV or print/save them as PDF
